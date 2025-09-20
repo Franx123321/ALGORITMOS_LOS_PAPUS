@@ -42,6 +42,7 @@
 
 #define TAM_CELDA 30 //Tamaño en pixeles
 
+#define ERROR_ARCH 0
 #define ERROR_SDL 0
 #define ERROR_CONFIG 0
 #define TODO_BIEN 1

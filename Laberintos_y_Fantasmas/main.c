@@ -77,42 +77,78 @@ int main(int argc, char *argv[])
 //CONFIGURACION//
 int leerConfig(Configuracion *config)
 {
-    FILE *pf = fopen("config.txt","rt");
-    if(!pf)
-        return 0;
+    int valor, seteados = 0;
+    char linea[128], clave[80], *sep;
 
-    fscanf(pf, "%d", &config->columnas);
-    fscanf(pf, "%d", &config->filas);
-    if(config->filas < MIN_FILAS || config->columnas < MIN_COLUMNAS)
-    {
+    FILE *archConfig = fopen("config.txt", "rt");
+    if (!archConfig)
+        return ERROR_ARCH;
+
+    while (fgets(linea, 128, archConfig)) {
+        sep = strchr(linea, '=');
+        if (!sep) continue;
+
+        strncpy(clave, linea, sep - linea);
+        *(clave + (sep - linea)) = '\0';
+
+        sscanf(sep + 1, " %d", &valor);
+
+        if (strcmp(clave, "filas") == 0) {
+            config->filas = valor;
+            seteados |= 1; // Bit: |= 000001
+        }
+        if (strcmp(clave, "columnas") == 0) {
+            config->columnas = valor;
+            seteados |= 2; // Bit: |= 000010
+        }
+        if (strcmp(clave, "vidas_inicio") == 0) {
+            config->vidasIniciales = valor;
+            seteados |= 4; // Bit: |= 000100
+        }
+        if (strcmp(clave, "maximo_numero_fantasmas") == 0) {
+            config->maxFantasmas = valor;
+            seteados |= 8; // Bit: |= 001000
+        }
+        if (strcmp(clave, "maximo_numero_premios") == 0) {
+            config->maxPremios = valor;
+            seteados |= 16; // Bit: |= 010000
+        }
+        if (strcmp(clave, "maximo_vidas_extra") == 0) {
+            config->maxVidasExtra = valor;
+            seteados |= 32; // Bit: |= 100000
+        }
+    }
+
+    // Se fija si todos los bits están seteados (todos los valores presentes)
+    if (seteados != 63) { // Bits: 111111
+        printf("Error de configuracion: faltan parametros en el archivo o estan mal escritos.\n");
+        printf("    (tip: se escribe 'clave=valor', separados con signo igual)\n");
+        return ERROR_CONFIG;
+    }
+
+    // Chequeo de rangos
+    if(config->filas < MIN_FILAS || config->columnas < MIN_COLUMNAS) {
         printf("\nTamaño del laberinto inferior al mínimo posible, revise la configuración.");
         return ERROR_CONFIG;
     }
-    if(config->filas > MAX_FILAS || config->columnas > MAX_COLUMNAS)
-    {
+    if(config->filas > MAX_FILAS || config->columnas > MAX_COLUMNAS) {
         printf("\nTamaño del laberinto superior al máximo posible, revise la configuración.");
         return ERROR_CONFIG;
     }
-    fscanf(pf, "%d", &config->maxFantasmas);
-    fscanf(pf, "%d", &config->maxPremios);
-    if(config->maxFantasmas < 1 || config->maxPremios < 1)
-    {
+    if(config->maxFantasmas < 1 || config->maxPremios < 1) {
         printf("\nNo puede haber 0 fantasmas o premios, revise la configuración.");
         return ERROR_CONFIG;
     }
-    fscanf(pf, "%d", &config->maxVidasExtra);
-    if(config->maxVidasExtra < 0)
-    {
+    if(config->maxVidasExtra < 0) {
         printf("\nEl máximo número de vidas extra no puede ser un número negativo, revise la configuración.");
         return ERROR_CONFIG;
     }
-    fscanf(pf, "%d", &config->vidasIniciales);
-    if(config->vidasIniciales < 1)
-    {
+    if(config->vidasIniciales < 1) {
         printf("\nNo puede empezar el juego con menos de 1 vida, revise la configuración.");
         return ERROR_CONFIG;
     }
-    fclose(pf);
+
+    fclose(archConfig);
 
     return TODO_BIEN;
 }

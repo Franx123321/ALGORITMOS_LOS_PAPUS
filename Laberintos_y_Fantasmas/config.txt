@@ -1,6 +1,6 @@
-21
-21
-3
-5
-3
-1
+filas=21
+columnas=21
+vidas_inicio=3
+maximo_numero_fantasmas=5
+maximo_numero_premios=3
+maximo_vidas_extra=1
