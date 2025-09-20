@@ -8,6 +8,7 @@ void mostrar_matriz(char **matriz, int filas, int col);
 void inicializarTablero(Tablero laberinto);
 void mezclarDirecciones(int dir[4][2]);
 void generarSalida(Tablero *laberinto);
+int leerConfiguracion(const char* nombreArch, Configuracion* config);
 
 
 int main()
@@ -15,22 +16,12 @@ int main()
     Configuracion config;
     Tablero laberinto;
     int i;
-    FILE *pf = fopen("config.txt","rt");
-    if(!pf)
-    {
-        printf("ERROR al abrir un archivo.");
+
+    if (leerConfiguracion("config.txt", &config)) {
         exit(1);
     }
 
     srand(time(NULL));
-
-    fscanf(pf, "%d", &config.columnas);
-    fscanf(pf, "%d", &config.filas);
-    fscanf(pf, "%d", &config.maxFantasmas);
-    fscanf(pf, "%d", &config.maxPremios);
-    fscanf(pf, "%d", &config.maxVidasExtra);
-    fscanf(pf, "%d", &config.vidasIniciales);
-    fclose(pf);
 
     laberinto.filas = config.filas;
     laberinto.columnas = config.columnas;
@@ -46,24 +37,24 @@ int main()
 
 
 
-    
+
 
     return 0;
 }
 
 
 //FUNCIONES DE TABLERO//
-void **crear_matriz(int filas, int columnas, unsigned tamElem) 
+void **crear_matriz(int filas, int columnas, unsigned tamElem)
 {
     int I, J;
     void **matriz = malloc(filas * sizeof(void *));
-    if (!matriz) 
+    if (!matriz)
         return NULL;
 
-    for ( I = 0; I < filas; I++) 
+    for ( I = 0; I < filas; I++)
     {
         matriz[I] = malloc(columnas * tamElem);
-        if (!matriz[I]) 
+        if (!matriz[I])
         {
             for (J = 0; J < I; J++)
             {
@@ -76,7 +67,7 @@ void **crear_matriz(int filas, int columnas, unsigned tamElem)
     return matriz;
 }
 
-void destruir_matriz(void **matriz, int filas) 
+void destruir_matriz(void **matriz, int filas)
 {
     int I;
 
@@ -160,10 +151,10 @@ void generarSalida(Tablero *laberinto)
     int filaSalida = 1 + rand() % (filas - 2);
 
     // Verifica si hay camino hasta la penúltima columna
-    if(laberinto->celdas[filaSalida][columnas - 2] != ' ') 
+    if(laberinto->celdas[filaSalida][columnas - 2] != ' ')
     {
         //Si no hay camino, "fuerza" uno desde la última celda libre a la izquierda
-        for(j = columnas - 2; j > 0; j--) 
+        for(j = columnas - 2; j > 0; j--)
         {
             laberinto->celdas[filaSalida][j] = ' ';
         }
@@ -171,4 +162,62 @@ void generarSalida(Tablero *laberinto)
 
     // Pone la salida
     laberinto->celdas[filaSalida][columnas - 1] = 'S';
+}
+
+int leerConfiguracion(const char* nombreArch, Configuracion* config)
+{
+    int valor, seteados = 0;
+    char linea[128], clave[80], *sep;
+
+    FILE *archConfig = fopen(nombreArch, "rt");
+    if (!archConfig)
+    {
+        perror("Error al abrir archivo de configuracion");
+        return 1;
+    }
+
+    while (fgets(linea, 128, archConfig)) {
+        sep = strchr(linea, '=');
+        if (!sep) continue;
+
+        strncpy(clave, linea, sep - linea);
+        *(clave + (sep - linea)) = '\0';
+
+        sscanf(sep + 1, " %d", &valor);
+
+        if (strcmp(clave, "filas") == 0) {
+            config->filas = valor;
+            seteados++;
+        }
+        if (strcmp(clave, "columnas") == 0) {
+            config->columnas = valor;
+            seteados++;
+        }
+        if (strcmp(clave, "vidas_inicio") == 0) {
+            config->vidasIniciales = valor;
+            seteados++;
+        }
+        if (strcmp(clave, "maximo_numero_fantasmas") == 0) {
+            config->maxFantasmas = valor;
+            seteados++;
+        }
+        if (strcmp(clave, "maximo_numero_premios") == 0) {
+            config->maxPremios = valor;
+            seteados++;
+        }
+        if (strcmp(clave, "maximo_vidas_extra") == 0) {
+            config->maxVidasExtra = valor;
+            seteados++;
+        }
+    }
+
+    if (seteados < 6) {
+        printf("Error de configuracion: faltan parametros en el archivo o estan mal escritos.\n");
+        printf("    (tip: se escribe 'clave=valor', separados con signo igual)\n");
+        return 2;
+    }
+
+    fclose(archConfig);
+
+    return 0;
 }
