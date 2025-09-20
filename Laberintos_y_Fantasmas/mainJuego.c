@@ -159,13 +159,13 @@ void **crear_matriz(int filas, int columnas, unsigned tamElem)
 {
     int I, J;
     void **matriz = malloc(filas * sizeof(void *));
-    if (!matriz) 
+    if (!matriz)
         return NULL;
 
-    for ( I = 0; I < filas; I++) 
+    for ( I = 0; I < filas; I++)
     {
         matriz[I] = malloc(columnas * tamElem);
-        if (!matriz[I]) 
+        if (!matriz[I])
         {
             for (J = 0; J < I; J++)
             {
@@ -178,7 +178,7 @@ void **crear_matriz(int filas, int columnas, unsigned tamElem)
     return matriz;
 }
 
-void destruir_matriz(void **matriz, int filas) 
+void destruir_matriz(void **matriz, int filas)
 {
     int I;
 
@@ -262,10 +262,10 @@ void generarSalida(Tablero *laberinto)
     int filaSalida = 1 + rand() % (filas - 2);
 
     // Verifica si hay camino hasta la penúltima columna
-    if(laberinto->celdas[filaSalida][columnas - 2] != ' ') 
+    if(laberinto->celdas[filaSalida][columnas - 2] != ' ')
     {
         //Si no hay camino, "fuerza" uno desde la última celda libre a la izquierda
-        for(j = columnas - 2; j > 0; j--) 
+        for(j = columnas - 2; j > 0; j--)
         {
             laberinto->celdas[filaSalida][j] = ' ';
         }
