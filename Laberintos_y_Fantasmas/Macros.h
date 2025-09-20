@@ -5,8 +5,22 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-//#include <SDL2/SDL.h>
-//#include <SDL2/SDL_ttf.h>
+#include <ctype.h>
+
+#ifdef _WIN32
+    // Windows (MinGW / MSVC)
+    #include <SDL2/SDL.h>
+    #include <SDL2/SDL_ttf.h>
+#elif __APPLE__
+    // macOS (Frameworks)
+    #include <SDL.h>
+    #include <SDL_ttf.h>
+#else
+    // Linux (paquetes SDL2)
+    #include <SDL2/SDL.h>
+    #include <SDL2/SDL_ttf.h>
+#endif
+
 #ifdef WIN_32
     #include <windows.h>
 #else
@@ -14,6 +28,14 @@
 #endif
 
 #define RESERVAR_MEM(X,Y,Z,W) (((X) = (typeof(X)) malloc(Y)) == NULL ||((Z) = malloc(W)) == NULL ? free(X), 0 : 1 )
+#define MIN_FILAS 8
+#define MIN_COLUMNAS 8
+#define MAX_FILAS 50
+#define MAX_COLUMNAS 50
+#define MOV_INVALIDO 0
+#define MOV_VALIDO 1
+#define VICTORIA 2
+
 
 typedef struct sNodo{
     void *dato;
