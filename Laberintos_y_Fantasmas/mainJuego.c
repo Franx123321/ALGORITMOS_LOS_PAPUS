@@ -1,17 +1,29 @@
 #include "Macros.h"
 
+//CONFIGURACION//
 int leerConfig(Configuracion *config);
 
+//SDL//
+int inicializarSDL(SDL_Window **ventana, SDL_Renderer **renderer, int ancho, int alto);
+void destruirSDL(SDL_Window **ventana, SDL_Renderer **renderer, TTF_Font **fuente);
+int renderizarTexto(SDL_Renderer *renderer, TTF_Font *fuente, const char *mensaje, SDL_Color color, int ancho, int alto, int tiempo);
+
 //TABLERO//
-void cargarLaberinto(Tablero *laberinto);
+
 void **crear_matriz(int filas, int columnas, unsigned tamElem);
 void destruir_matriz(void **matriz, int filas);
-void generarLaberinto(Tablero laberinto, int fil, int col);
 void mostrar_matriz(char **matriz, int filas, int col);
 void inicializarTablero(Tablero laberinto);
+void generarLaberinto(Tablero laberinto, int fil, int col);
 void mezclarDirecciones(int dir[4][2]);
 void generarSalida(Tablero *laberinto);
+void cargarLaberinto(Tablero *laberinto);
+void dibujarTablero(SDL_Renderer *renderer, Tablero *laberinto);
+
+//PARTIDA//
+void Jugar(Tablero *laberinto, Jugador *jugador, SDL_Renderer *renderer, TTF_Font *fuente, int ancho, int alto);
 int realizarMovimiento(Tablero *laberinto, Jugador *jugador, char direccion);
+void victoria(SDL_Renderer *renderer, TTF_Font *fuente, int ancho, int alto);
 
 
 int main()
@@ -19,7 +31,11 @@ int main()
     Configuracion config;
     Tablero laberinto;
     Jugador jugador;
-    int i;
+    SDL_Window *ventana = NULL;
+    SDL_Renderer *renderer = NULL;
+    TTF_Font *fuente;
+    int ancho,
+        alto;
     
     srand(time(NULL));
 
@@ -36,67 +52,24 @@ int main()
     jugador.vidas = config.vidasIniciales;
 
     //SDL//
-    SDL_Window *ventana;
-    SDL_Renderer *renderer;
-    if(SDL_Init(SDL_INIT_VIDEO) < 0)
+    ancho = laberinto.columnas * TAM_CELDA;
+    alto = laberinto.filas * TAM_CELDA;
+    inicializarSDL(&ventana, &renderer, ancho, alto);
+    fuente = TTF_OpenFont("assets/Sora-Bold.ttf", 48);
+    if(!fuente)
     {
-        printf("\nERROR al inicializar la ventana: %s", SDL_GetError());
-        exit(1);
-    }
-    if(TTF_Init() < 0)
-    {
-        printf("\nERROR al inicializar la ventana: %s", TTF_GetError());
-        exit(1);
-    }
-    
-    ventana = SDL_CreateWindow("Laberintos y Fantasmas", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 600, SDL_WINDOW_SHOWN);
-    if(!ventana)
-    {
-        printf("\nERROR al crear la ventana: %s", SDL_GetError());
+        printf("\nERROR al cargar fuente: %s", TTF_GetError());
         exit(1);
     }
 
-    renderer = SDL_CreateRenderer(ventana, -1, SDL_RENDERER_ACCELERATED);
-    if(!ventana)
-        {
-            printf("\nERROR al renderizar: %s", SDL_GetError());
-            exit(1);
-        }
+    //LOGICA DE JUEGO//
+    Jugar(&laberinto, &jugador, renderer, fuente, ancho, alto);
 
-
-
-    //LOGICA DE MOVIMIENTO//
-
-    char movimiento;
-    int estado = 1;
-
-    jugador.posY = 1;
-    jugador.posX = 0;
-    laberinto.celdas[jugador.posY][jugador.posX] = 'J';
-
-    while(estado != VICTORIA)
-    {
-        printf("\n%d vidas.\n", jugador.vidas);
-        mostrar_matriz(laberinto.celdas, laberinto.filas, laberinto.columnas);
-        printf("\n\nMover (WASD): ");
-        scanf(" %c", &movimiento);
-        #ifdef WIN_32
-            system("cls");
-        #else
-            system("clear");
-        #endif
-        
-        estado = realizarMovimiento(&laberinto, &jugador, movimiento);
-
-        if(estado == MOV_INVALIDO)
-            printf("\nMovimiento inválido.\n");
-    }
-
-    printf("\n\nVictoria!");
-
+    //DESTRUCTORES//
     destruir_matriz((void **)laberinto.celdas, laberinto.filas);
-
-    printf("\n\n\n\n\n\n");
+    destruirSDL(&ventana, &renderer, &fuente);
+    
+    
     return 0;
 }
 
@@ -112,36 +85,136 @@ int leerConfig(Configuracion *config)
     if(config->filas < MIN_FILAS || config->columnas < MIN_COLUMNAS)
     {
         printf("\nTamaño del laberinto inferior al mínimo posible, revise la configuración.");
-        exit(1);
+        return ERROR_CONFIG;
     }
     if(config->filas > MAX_FILAS || config->columnas > MAX_COLUMNAS)
     {
         printf("\nTamaño del laberinto superior al máximo posible, revise la configuración.");
-        exit(1);
+        return ERROR_CONFIG;
     }
     fscanf(pf, "%d", &config->maxFantasmas);
     fscanf(pf, "%d", &config->maxPremios);
     if(config->maxFantasmas < 1 || config->maxPremios < 1)
     {
         printf("\nNo puede haber 0 fantasmas o premios, revise la configuración.");
-        exit(1);
+        return ERROR_CONFIG;
     }
     fscanf(pf, "%d", &config->maxVidasExtra);
     if(config->maxVidasExtra < 0)
     {
         printf("\nEl máximo número de vidas extra no puede ser un número negativo, revise la configuración.");
-        exit(1);
+        return ERROR_CONFIG;
     }
     fscanf(pf, "%d", &config->vidasIniciales);
     if(config->vidasIniciales < 1)
     {
         printf("\nNo puede empezar el juego con menos de 1 vida, revise la configuración.");
-        exit(1);
+        return ERROR_CONFIG;
     }
     fclose(pf);
 
-    return 1;
+    return TODO_BIEN;
 }
+
+
+//FUNCIONES SDL//
+int inicializarSDL(SDL_Window **ventana, SDL_Renderer **renderer, int ancho, int alto)
+{
+    if(SDL_Init(SDL_INIT_VIDEO) < 0)
+    {
+        printf("\nERROR al inicializar la ventana: %s", SDL_GetError());
+        return ERROR_SDL;
+    }
+    if(TTF_Init() < 0)
+    {
+        printf("\nERROR al inicializar la ventana: %s", TTF_GetError());
+        SDL_Quit();
+        return ERROR_SDL;
+    }
+    
+    *ventana = SDL_CreateWindow("Laberintos y Fantasmas", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, ancho, alto, SDL_WINDOW_SHOWN);
+    if(!*ventana)
+    {
+        printf("\nERROR al crear la ventana: %s", SDL_GetError());
+        TTF_Quit();
+        SDL_Quit();
+        return ERROR_SDL;
+    }
+
+    *renderer = SDL_CreateRenderer(*ventana, -1, SDL_RENDERER_ACCELERATED);
+    if(!*renderer)
+    {
+        printf("\nERROR al renderizar: %s", SDL_GetError());
+        SDL_DestroyWindow(*ventana);
+        TTF_Quit();
+        SDL_Quit();
+        return ERROR_SDL;
+    }   
+    
+    return TODO_BIEN;
+}
+
+int renderizarTexto(SDL_Renderer *renderer, TTF_Font *fuente, const char *mensaje, SDL_Color color, int ancho, int alto, int tiempo)
+{
+    SDL_Rect destino;
+    SDL_Surface *superficie;
+    SDL_Texture *texto;
+
+    superficie = TTF_RenderText_Solid(fuente, mensaje, color);
+    if(!superficie)
+    {
+        printf("\nERROR al renderizar un texto: %s", SDL_GetError());
+        return ERROR_SDL;
+    }
+    texto = SDL_CreateTextureFromSurface(renderer, superficie);
+    if(!texto)
+    {
+        printf("\nERROR al crear una textura: %s", SDL_GetError());
+        SDL_FreeSurface(superficie);
+        return ERROR_SDL;
+    }
+
+
+    destino.w = superficie->w;
+    destino.h = superficie->h;
+    destino.x = (ancho - destino.w) / 2;
+    destino.y = (alto - destino.h) / 2;
+
+    SDL_FreeSurface(superficie);
+
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+    SDL_RenderClear(renderer);
+    SDL_RenderCopy(renderer, texto, NULL, &destino);
+    SDL_RenderPresent(renderer);
+
+    if(tiempo > 0)
+        SDL_Delay(tiempo);
+
+    SDL_DestroyTexture(texto);
+    return TODO_BIEN;
+}
+
+void destruirSDL(SDL_Window **ventana, SDL_Renderer **renderer, TTF_Font **fuente)
+{
+    if(*fuente)
+    {
+        TTF_CloseFont(*fuente);
+        *fuente = NULL;
+    }
+    if(*renderer)
+    {
+        SDL_DestroyRenderer(*renderer);
+        *renderer = NULL;
+    }
+    if(*ventana)
+    {
+        SDL_DestroyWindow(*ventana);
+        *ventana = NULL;
+    }
+    TTF_Quit();
+    SDL_Quit();
+}
+
 
 //FUNCIONES DE TABLERO//
 void cargarLaberinto(Tablero *laberinto)
@@ -275,10 +348,90 @@ void generarSalida(Tablero *laberinto)
     laberinto->celdas[filaSalida][columnas - 1] = 'S';
 }
 
+void dibujarTablero(SDL_Renderer *renderer, Tablero *laberinto)
+{
+    int I, J;
+
+    char celda;
+    SDL_Rect recta;
+
+    for(I = 0; I < laberinto->filas; I++)
+    {
+        for(J = 0; J < laberinto->columnas; J++)
+        {
+            recta.x = J * TAM_CELDA;
+            recta.y = I * TAM_CELDA;
+            recta.w = TAM_CELDA;
+            recta.h = TAM_CELDA;
+
+            celda = laberinto->celdas[I][J];
+            
+            //Colores para cada cosa, se pueden cambiar cambiando los parametros 2, 3 y 4
+            if(celda == '#')
+                SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+            else if(celda == 'J')
+                SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255);
+            else if(celda == 'S')
+                SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
+            else
+                SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+
+            SDL_RenderFillRect(renderer, &recta);
+        }
+    }
+}
 
 
+//FUNCIONES DE PARTIDA//
+void Jugar(Tablero *laberinto, Jugador *jugador, SDL_Renderer *renderer, TTF_Font *fuente, int ancho, int alto)
+{
+    char movimiento = 0;
+    int estado = 1, jugando = 1;
+    SDL_Event evento;
 
-//FUNCIONES DE MOVIMIENTO//
+    jugador->posY = 1;
+    jugador->posX = 0;
+    laberinto->celdas[jugador->posY][jugador->posX] = 'J';
+
+    while(jugando && estado != VICTORIA)
+    {
+        while(SDL_PollEvent(&evento))
+        {
+            if(evento.type == SDL_QUIT)
+                jugando = 0;
+            else if(evento.type == SDL_KEYDOWN)
+            {
+                switch(evento.key.keysym.sym)
+                {
+                    case SDLK_w: movimiento = 'w';
+                                 break;
+                    case SDLK_s: movimiento = 's';
+                                 break;
+                    case SDLK_a: movimiento = 'a';
+                                 break;
+                    case SDLK_d: movimiento = 'd';
+                                 break;
+                    default: movimiento = 0;
+                             break;
+                }
+                if(movimiento)
+                    estado = realizarMovimiento(laberinto, jugador, movimiento);
+            }
+        }
+
+        SDL_SetRenderDrawColor(renderer, 200, 200, 200, 255);
+        SDL_RenderClear(renderer);
+
+        dibujarTablero(renderer, laberinto);
+
+        SDL_RenderPresent(renderer);
+
+        SDL_Delay(1000 / 60);
+    }
+
+    if(estado == VICTORIA)
+        victoria(renderer, fuente, ancho, alto);
+}
 
 int realizarMovimiento(Tablero *laberinto, Jugador *jugador, char direccion)
 {
@@ -313,4 +466,24 @@ int realizarMovimiento(Tablero *laberinto, Jugador *jugador, char direccion)
     laberinto->celdas[jugador->posY][jugador->posX] = 'J';
 
     return MOV_VALIDO;
+}
+
+void victoria(SDL_Renderer *renderer, TTF_Font *fuente, int ancho, int alto)
+{
+    SDL_Event evento;
+    int salir = 0;
+
+    renderizarTexto(renderer, fuente, "!Victoria!", COLOR_BLANCO, ancho, alto, 0);
+
+    while(!salir)
+    {
+        while(SDL_PollEvent(&evento))
+        {
+            if(evento.type == SDL_QUIT)
+                salir = 1;
+            else if(evento.type == SDL_KEYDOWN && evento.key.keysym.sym == SDLK_ESCAPE)
+                salir = 1;
+        }
+        SDL_Delay(50);
+    }
 }

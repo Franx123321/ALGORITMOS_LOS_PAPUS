@@ -28,13 +28,25 @@
 #endif
 
 #define RESERVAR_MEM(X,Y,Z,W) (((X) = (typeof(X)) malloc(Y)) == NULL ||((Z) = malloc(W)) == NULL ? free(X), 0 : 1 )
+
 #define MIN_FILAS 8
 #define MIN_COLUMNAS 8
 #define MAX_FILAS 50
 #define MAX_COLUMNAS 50
+
 #define MOV_INVALIDO 0
 #define MOV_VALIDO 1
+
 #define VICTORIA 2
+#define DERROTA -1
+
+#define TAM_CELDA 30 //Tamaño en pixeles
+
+#define ERROR_SDL 0
+#define ERROR_CONFIG 0
+#define TODO_BIEN 1
+
+#define COLOR_BLANCO (SDL_Color){255, 255, 255, 255}
 
 
 typedef struct sNodo{
