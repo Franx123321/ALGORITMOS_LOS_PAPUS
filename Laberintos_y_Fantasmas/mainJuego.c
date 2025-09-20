@@ -292,7 +292,7 @@ void inicializarTablero(Tablero laberinto)
 void generarLaberinto(Tablero laberinto, int fil, int col)
 {
     int direccion[4][2] = {{-2, 0},{2, 0},{0, -2},{0, 2}}; //Posibles direcciones
-    int I, J, nfila, ncol;
+    int I, nfila, ncol;
     mezclarDirecciones(direccion);
 
     for(I = 0; I < 4; I++)
@@ -329,7 +329,7 @@ void generarSalida(Tablero *laberinto)
 {
     int filas = laberinto->filas;
     int columnas = laberinto->columnas;
-    int i, j;
+    int i;
 
     //Busca la fila desde la que va a colocar la salida
     int filaSalida = 1 + rand() % (filas - 2);
@@ -338,9 +338,9 @@ void generarSalida(Tablero *laberinto)
     if(laberinto->celdas[filaSalida][columnas - 2] != ' ')
     {
         //Si no hay camino, "fuerza" uno desde la última celda libre a la izquierda
-        for(j = columnas - 2; j > 0; j--)
+        for(i = columnas - 2; i > 0; i--)
         {
-            laberinto->celdas[filaSalida][j] = ' ';
+            laberinto->celdas[filaSalida][i] = ' ';
         }
     }
 
