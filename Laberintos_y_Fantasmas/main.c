@@ -16,6 +16,7 @@ void destruir_matriz(void **matriz, int filas);
 void mostrar_matriz(char **matriz, int filas, int col);
 void inicializarTablero(Tablero laberinto);
 void generarLaberinto(Tablero laberinto, int fil, int col);
+void agujerearLaberinto(Tablero laberinto);
 void mezclarDirecciones(int dir[4][2]);
 void generarSalida(Tablero *laberinto);
 void cargarLaberinto(Tablero *laberinto);
@@ -261,6 +262,7 @@ void cargarLaberinto(Tablero *laberinto)
 
     laberinto->celdas[1][1] = ' ';
     generarLaberinto(*laberinto, 1, 1);
+    agujerearLaberinto(*laberinto);
     laberinto->celdas[1][0] = 'E';
     generarSalida(laberinto);
 }
@@ -342,6 +344,35 @@ void generarLaberinto(Tablero laberinto, int fil, int col)
             laberinto.celdas[(fil+nfila)/2][(col+ncol)/2] = ' ';
             laberinto.celdas[nfila][ncol] = ' ';
             generarLaberinto(laberinto, nfila, ncol);
+        }
+    }
+}
+
+void agujerearLaberinto(Tablero laberinto)
+{
+    int I, J;
+
+    for(I = 1; I < laberinto.filas - 1; I += 2)
+    {
+        for(J = 1; J < laberinto.columnas - 1; J += 2)
+        {
+            // Si a la derecha hay pared y no es borde, tirar dado
+            if (laberinto.celdas[I][J + 1] == '#' && J < laberinto.columnas - 2)
+            {
+                if (rand() % 10 == 0)
+                {
+                    laberinto.celdas[I][J + 1] = ' ';
+                }
+            }
+
+            // Si abajo hay pared y no es borde, tirar dado
+            if (laberinto.celdas[I + 1][J] == '#' && I < laberinto.filas - 2)
+            {
+                if (rand() % 10 == 0)
+                {
+                    laberinto.celdas[I+ 1][J] = ' ';
+                }
+            }
         }
     }
 }
