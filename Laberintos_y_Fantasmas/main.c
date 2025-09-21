@@ -19,6 +19,7 @@ void generarLaberinto(Tablero laberinto, int fil, int col);
 void agujerearLaberinto(Tablero laberinto);
 void mezclarDirecciones(int dir[4][2]);
 void generarSalida(Tablero *laberinto);
+int guardarLaberinto(Tablero *laberinto);
 void cargarLaberinto(Tablero *laberinto);
 void dibujarTablero(SDL_Renderer *renderer, Tablero *laberinto);
 
@@ -52,6 +53,11 @@ int main(int argc, char *argv[])
     cargarLaberinto(&laberinto);
 
     jugador.vidas = config.vidasIniciales;
+    jugador.posY = 1;
+    jugador.posX = 0;
+    laberinto.celdas[jugador.posY][jugador.posX] = 'J';
+
+    guardarLaberinto(&laberinto);
 
     //SDL//
     ancho = laberinto.columnas * TAM_CELDA;
@@ -397,12 +403,36 @@ void generarSalida(Tablero *laberinto)
 {
     int filas = laberinto->filas;
     int columnas = laberinto->columnas;
+    //int i, j;
 
     //Busca la fila desde la que va a colocar la salida
     int filaSalida = 1 + rand() % ((filas - 1) / 2) * 2;
 
     // Pone la salida
     laberinto->celdas[filaSalida][columnas - 1] = 'S';
+}
+
+int guardarLaberinto(Tablero *laberinto)
+{
+    int I, J;
+    FILE *archLaberinto = fopen("laberinto.txt", "wt");
+    if (!archLaberinto) {
+        perror("Error al abrir archivo de laberinto");
+        return ERROR_ARCH;
+    }
+
+    for(I = 0; I < laberinto->filas; I++)
+    {
+        for(J = 0; J < laberinto->columnas; J++)
+        {
+            fputc(laberinto->celdas[I][J], archLaberinto);
+        }
+        fputc('\n', archLaberinto);
+    }
+
+    fclose(archLaberinto);
+
+    return TODO_BIEN;
 }
 
 void dibujarTablero(SDL_Renderer *renderer, Tablero *laberinto)
@@ -445,10 +475,6 @@ void Jugar(Tablero *laberinto, Jugador *jugador, SDL_Renderer *renderer, TTF_Fon
     char movimiento = 0;
     int estado = 1, jugando = 1;
     SDL_Event evento;
-
-    jugador->posY = 1;
-    jugador->posX = 0;
-    laberinto->celdas[jugador->posY][jugador->posX] = 'J';
 
     while(jugando && estado != VICTORIA)
     {
