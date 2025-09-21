@@ -397,20 +397,9 @@ void generarSalida(Tablero *laberinto)
 {
     int filas = laberinto->filas;
     int columnas = laberinto->columnas;
-    int i, j;
 
     //Busca la fila desde la que va a colocar la salida
-    int filaSalida = 1 + rand() % (filas - 2);
-
-    // Verifica si hay camino hasta la penúltima columna
-    if(laberinto->celdas[filaSalida][columnas - 2] != ' ')
-    {
-        //Si no hay camino, "fuerza" uno desde la última celda libre a la izquierda
-        for(j = columnas - 2; j > 0; j--)
-        {
-            laberinto->celdas[filaSalida][j] = ' ';
-        }
-    }
+    int filaSalida = 1 + rand() % ((filas - 1) / 2) * 2;
 
     // Pone la salida
     laberinto->celdas[filaSalida][columnas - 1] = 'S';
