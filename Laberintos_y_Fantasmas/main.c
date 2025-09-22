@@ -410,6 +410,10 @@ void generarSalida(Tablero *laberinto)
 
     // Pone la salida
     laberinto->celdas[filaSalida][columnas - 1] = 'S';
+
+    if (columnas % 2 == 0) {
+        laberinto->celdas[filaSalida][columnas - 2] = ' ';
+    }
 }
 
 int guardarLaberinto(Tablero *laberinto)
