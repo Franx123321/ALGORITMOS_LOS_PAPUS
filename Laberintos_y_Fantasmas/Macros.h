@@ -31,7 +31,7 @@
 
 #define MIN_FILAS 8
 #define MIN_COLUMNAS 8
-#define MAX_FILAS 50
+#define MAX_FILAS 30    //Es lo maximo que se ve bien en pantalla
 #define MAX_COLUMNAS 50
 
 #define MOV_INVALIDO 0
@@ -48,6 +48,7 @@
 #define TODO_BIEN 1
 
 #define COLOR_BLANCO (SDL_Color){255, 255, 255, 255}
+#define COLOR_ROJO (SDL_Color){255, 0, 0, 255}
 
 
 typedef struct sNodo{
@@ -73,6 +74,7 @@ typedef struct{
 typedef struct{
     int posX;
     int posY;
+    int vivo;
 }Fantasma;
 
 typedef struct{
