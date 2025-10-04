@@ -41,6 +41,7 @@
 #define DERROTA -1
 
 #define TAM_CELDA 30 //Tamaño en pixeles
+#define MARGEN 40 //Margen superior para el HUD
 
 #define ERROR_ARCH 0
 #define ERROR_SDL 0
@@ -49,6 +50,7 @@
 
 #define COLOR_BLANCO (SDL_Color){255, 255, 255, 255}
 #define COLOR_ROJO (SDL_Color){255, 0, 0, 255}
+#define COLOR_AZUL (SDL_Color){0, 0, 255, 255}
 
 
 typedef struct sNodo{

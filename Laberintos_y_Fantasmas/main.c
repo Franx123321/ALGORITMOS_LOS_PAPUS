@@ -6,9 +6,12 @@ int leerConfig(Configuracion *config);
 
 //SDL//
 int inicializarSDL(SDL_Window **ventana, SDL_Renderer **renderer, int ancho, int alto);
-void destruirSDL(SDL_Window **ventana, SDL_Renderer **renderer, TTF_Font **fuente);
+void destruirSDL(SDL_Window **ventana, SDL_Renderer **renderer, 
+                    TTF_Font **fuente, TTF_Font **fuenteHud);
 int renderizarTexto(SDL_Renderer *renderer, TTF_Font *fuente, 
                     const char *mensaje, SDL_Color color, int ancho, int alto, int tiempo);
+void renderizarHUD(SDL_Renderer *renderer, TTF_Font *fuente, const char *mensaje,
+                    SDL_Color color, int x, int y);
 
 //TABLERO//
 void **crear_matriz(int filas, int columnas, unsigned tamElem);
@@ -21,7 +24,7 @@ void mezclarDirecciones(int dir[4][2]);
 void generarSalida(Tablero *laberinto);
 int guardarLaberinto(Tablero *laberinto);
 void cargarLaberinto(Tablero *laberinto);
-void dibujarTablero(SDL_Renderer *renderer, Tablero *laberinto);
+void dibujarTablero(SDL_Renderer *renderer, Tablero *laberinto, Jugador *j, TTF_Font *fuente);
 
 //FANTASMAS//
 void generarFantasmas(Tablero *laberinto, Fantasma *fantasmas, int maxFantasmas);
@@ -30,7 +33,7 @@ int encontrarFantasma(Fantasma *fantasmas, int maxFantasmas, int x, int y);
 
 //PARTIDA//
 void Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, 
-            int maxFantasmas, SDL_Renderer *renderer, TTF_Font *fuente, int ancho, int alto);
+            int maxFantasmas, SDL_Renderer *renderer, TTF_Font *fuente, TTF_Font *fuenteHud, int ancho, int alto);
 int realizarMovimiento(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFantasmas, char direccion);
 void victoria(SDL_Renderer *renderer, TTF_Font *fuente, int ancho, int alto);
 void derrota(SDL_Renderer *renderer, TTF_Font *fuente, int ancho, int alto);
@@ -44,7 +47,7 @@ int main(int argc, char *argv[])
     Fantasma *fantasmas;
     SDL_Window *ventana = NULL;
     SDL_Renderer *renderer = NULL;
-    TTF_Font *fuente;
+    TTF_Font *fuente, *fuenteHud;
     int ancho,
         alto;
 
@@ -77,21 +80,22 @@ int main(int argc, char *argv[])
 
     //SDL//
     ancho = laberinto.columnas * TAM_CELDA;
-    alto = laberinto.filas * TAM_CELDA;
+    alto = laberinto.filas * TAM_CELDA + MARGEN;
     inicializarSDL(&ventana, &renderer, ancho, alto);
-    fuente = TTF_OpenFont("assets/Sora-Bold.ttf", 48);
-    if(!fuente)
+    fuente = TTF_OpenFont("assets/Sora-Bold.ttf", 60);
+    fuenteHud = TTF_OpenFont("assets/Sora-Bold.ttf", 30);
+    if(!fuente || !fuenteHud)
     {
-        printf("\nERROR al cargar fuente: %s", TTF_GetError());
+        printf("\nERROR al cargar una fuente: %s", TTF_GetError());
         exit(1);
     }
 
     //LOGICA DE JUEGO//
-    Jugar(&laberinto, &jugador, fantasmas, config.maxFantasmas, renderer, fuente, ancho, alto);
+    Jugar(&laberinto, &jugador, fantasmas, config.maxFantasmas, renderer, fuente, fuenteHud, ancho, alto);
 
     //DESTRUCTORES//
     destruir_matriz((void **)laberinto.celdas, laberinto.filas);
-    destruirSDL(&ventana, &renderer, &fuente);
+    destruirSDL(&ventana, &renderer, &fuente, &fuenteHud);
 
 
     return 0;
@@ -254,7 +258,38 @@ int renderizarTexto(SDL_Renderer *renderer, TTF_Font *fuente, const char *mensaj
     return TODO_BIEN;
 }
 
-void destruirSDL(SDL_Window **ventana, SDL_Renderer **renderer, TTF_Font **fuente)
+void renderizarHUD(SDL_Renderer *renderer, TTF_Font *fuente, const char *mensaje, SDL_Color color, int x, int y)
+{
+    SDL_Rect destino;
+    SDL_Surface *superficie;
+    SDL_Texture *texto;
+
+    superficie = TTF_RenderText_Solid(fuente, mensaje, color);
+    if(!superficie)
+    {
+        printf("\nERROR al renderizar un texto: %s", TTF_GetError());
+        return;
+    }
+
+    texto = SDL_CreateTextureFromSurface(renderer, superficie);
+    SDL_FreeSurface(superficie);
+    if(!texto)
+    {
+        printf("\nERROR al crear una textura: %s", SDL_GetError());
+        SDL_FreeSurface(superficie);
+        return;
+    }
+
+    destino.x = x;
+    destino.y = y; 
+    SDL_QueryTexture(texto, NULL, NULL, &destino.w, &destino.h);
+
+    SDL_RenderCopy(renderer, texto, NULL, &destino);
+    SDL_DestroyTexture(texto);
+}
+
+void destruirSDL(SDL_Window **ventana, SDL_Renderer **renderer, 
+                    TTF_Font **fuente, TTF_Font **fuenteHud)
 {
     if(*fuente)
     {
@@ -455,11 +490,12 @@ int guardarLaberinto(Tablero *laberinto)
     return TODO_BIEN;
 }
 
-void dibujarTablero(SDL_Renderer *renderer, Tablero *laberinto)
+void dibujarTablero(SDL_Renderer *renderer, Tablero *laberinto, Jugador *j, TTF_Font *fuente)
 {
     int I, J;
 
-    char celda;
+    char celda,
+         mensajeHUD[50];
     SDL_Rect recta;
 
     for(I = 0; I < laberinto->filas; I++)
@@ -467,7 +503,7 @@ void dibujarTablero(SDL_Renderer *renderer, Tablero *laberinto)
         for(J = 0; J < laberinto->columnas; J++)
         {
             recta.x = J * TAM_CELDA;
-            recta.y = I * TAM_CELDA;
+            recta.y = I * TAM_CELDA + MARGEN;
             recta.w = TAM_CELDA;
             recta.h = TAM_CELDA;
 
@@ -488,8 +524,10 @@ void dibujarTablero(SDL_Renderer *renderer, Tablero *laberinto)
             SDL_RenderFillRect(renderer, &recta);
         }
     }
-}
 
+    sprintf(mensajeHUD, "Vidas: %d", j->vidas);
+    renderizarHUD(renderer, fuente, mensajeHUD, COLOR_AZUL, 1, 2);
+}
 
 //FUNCIONES DE FANTASMAS//
 void generarFantasmas(Tablero *laberinto, Fantasma *fantasmas, int maxFantasmas)
@@ -570,7 +608,6 @@ int moverFantasmas(Tablero *laberinto, Fantasma *fantasmas, Jugador *jugador, in
                 if(nuevoX == jugador->posX && nuevoY == jugador->posY)
                 {
                     jugador->vidas--;
-                    printf("\nPerdiste una vida! Te quedan %d vidas.\n", jugador->vidas);
                     if(jugador->vidas <= 0)
                         return DERROTA;
                     fantasmas[I].vivo = 0;
@@ -605,7 +642,9 @@ int encontrarFantasma(Fantasma *fantasmas, int maxFantasmas, int x, int y)
 
 
 //FUNCIONES DE PARTIDA//
-void Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFantasmas, SDL_Renderer *renderer, TTF_Font *fuente, int ancho, int alto)
+void Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFantasmas, 
+            SDL_Renderer *renderer, TTF_Font *fuente, TTF_Font *fuenteHud, 
+            int ancho, int alto)
 {
     char movimiento = 0;
     int estado = 1, jugando = 1;
@@ -649,7 +688,7 @@ void Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFan
         SDL_SetRenderDrawColor(renderer, 200, 200, 200, 255);
         SDL_RenderClear(renderer);
 
-        dibujarTablero(renderer, laberinto);
+        dibujarTablero(renderer, laberinto, jugador, fuenteHud);
 
         SDL_RenderPresent(renderer);
 
@@ -698,7 +737,6 @@ int realizarMovimiento(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas
             fantasmas[fantasmaBuscado].vivo = 0;
 
         jugador->vidas--;
-        printf("\nPerdiste una vida! Te quedan %d vidas.\n", jugador->vidas);
         if(jugador->vidas <= 0)
             return DERROTA;
     }
