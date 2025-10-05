@@ -174,6 +174,22 @@ int leerConfig(Configuracion *config)
         printf("\nDebe haber al menos un fantasma o premio, revise la configuración.");
         return ERROR_CONFIG;
     }
+    if(config->maxFantasmas > (config->filas * config->columnas) / 4) {
+        printf("\nEl número de fantasmas es demasiado alto para el tamaño del laberinto, revise la configuración.");
+        return ERROR_CONFIG;
+    }
+    if(config->maxPremios > (config->filas * config->columnas) / 4) {
+        printf("\nEl número de premios es demasiado alto para el tamaño del laberinto, revise la configuración.");
+        return ERROR_CONFIG;
+    }
+    if(config->maxVidasExtra > (config->filas * config->columnas) / 4) {
+        printf("\nEl número de vidas extra es demasiado alto para el tamaño del laberinto, revise la configuración.");
+        return ERROR_CONFIG;
+    }
+    if(config->maxPremios < 0) {
+        printf("\nEl número de premios no puede ser un número negativo, revise la configuración.");
+        return ERROR_CONFIG;
+    }
     if(config->maxVidasExtra < 0) {
         printf("\nEl máximo número de vidas extra no puede ser un número negativo, revise la configuración.");
         return ERROR_CONFIG;
@@ -568,6 +584,7 @@ void generarFantasmas(Tablero *laberinto, Fantasma *fantasmas, int maxFantasmas)
         }
 
         laberinto->celdas[y][x] = 'F';
+        fantasmas[f].quePisa = ' ';
     }
 }
 
@@ -617,11 +634,12 @@ int moverFantasmas(Tablero *laberinto, Fantasma *fantasmas, Jugador *jugador, in
                 && laberinto->celdas[nuevoY][nuevoX] != 'E'
                 && laberinto->celdas[nuevoY][nuevoX] != 'F')
             {
-                if(laberinto->celdas[fantasmas[I].posY][fantasmas[I].posX] == 'F') 
-                   laberinto->celdas[fantasmas[I].posY][fantasmas[I].posX] = ' ';
+                laberinto->celdas[fantasmas[I].posY][fantasmas[I].posX] = fantasmas[I].quePisa; 
+                fantasmas[I].quePisa = laberinto->celdas[nuevoY][nuevoX]; //Guarda lo que pisa para restaurarlo despues
 
                 fantasmas[I].posX = nuevoX;
                 fantasmas[I].posY = nuevoY;
+                laberinto->celdas[nuevoY][nuevoX] = 'F';
 
                 if(nuevoX == jugador->posX && nuevoY == jugador->posY)
                 {
@@ -631,13 +649,9 @@ int moverFantasmas(Tablero *laberinto, Fantasma *fantasmas, Jugador *jugador, in
                     fantasmas[I].vivo = 0;
                     laberinto->celdas[nuevoY][nuevoX] = 'J';
                 }
-                else
-                    laberinto->celdas[nuevoY][nuevoX] = 'F';
 
                 break;
             }
-
-            direccion = rand() % 4;
         }
     }
 

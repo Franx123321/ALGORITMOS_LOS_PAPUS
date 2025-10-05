@@ -78,6 +78,7 @@ typedef struct{
     int posX;
     int posY;
     int vivo;
+    char quePisa;
 }Fantasma;
 
 typedef struct{
