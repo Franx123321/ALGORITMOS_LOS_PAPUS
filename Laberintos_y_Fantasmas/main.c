@@ -23,13 +23,17 @@ void agujerearLaberinto(Tablero laberinto);
 void mezclarDirecciones(int dir[4][2]);
 void generarSalida(Tablero *laberinto);
 int guardarLaberinto(Tablero *laberinto);
-void cargarLaberinto(Tablero *laberinto);
+void cargarLaberinto(Tablero *laberinto, Fantasma *fantasmas, Configuracion config);
 void dibujarTablero(SDL_Renderer *renderer, Tablero *laberinto, Jugador *j, TTF_Font *fuente);
 
 //FANTASMAS//
 void generarFantasmas(Tablero *laberinto, Fantasma *fantasmas, int maxFantasmas);
 int moverFantasmas(Tablero *laberinto, Fantasma *fantasmas, Jugador *jugador, int maxFantasmas);
 int encontrarFantasma(Fantasma *fantasmas, int maxFantasmas, int x, int y);
+
+//PREMIOS Y VIDAS EXTRA//
+void colocarVidasExtra(Tablero *laberinto, int vidasExtra);
+void colocarPremios(Tablero *laberinto, int maxPremios);
 
 //PARTIDA//
 void Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, 
@@ -66,16 +70,20 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
+    //TABLERO//
+    //Aca se carga el contenido del laberinto: paredes, caminos, salida, fantasmas, premios y vidas extra
     laberinto.filas = config.filas;
     laberinto.columnas = config.columnas;
-    cargarLaberinto(&laberinto);
-    generarFantasmas(&laberinto, fantasmas, config.maxFantasmas);
+    cargarLaberinto(&laberinto, fantasmas, config);
 
+    //JUGADOR//
     jugador.vidas = config.vidasIniciales;
     jugador.posY = 1;
     jugador.posX = 0;
+    jugador.puntaje = 0;
     laberinto.celdas[jugador.posY][jugador.posX] = 'J';
 
+    //Aca se guarda la disposicion inicial del laberinto en un archivo de texto
     guardarLaberinto(&laberinto);
 
     //SDL//
@@ -312,7 +320,7 @@ void destruirSDL(SDL_Window **ventana, SDL_Renderer **renderer,
 
 
 //FUNCIONES DE TABLERO//
-void cargarLaberinto(Tablero *laberinto)
+void cargarLaberinto(Tablero *laberinto, Fantasma *fantasmas, Configuracion config)
 {
     laberinto->celdas = (char **)crear_matriz(laberinto->filas, laberinto->columnas, sizeof(char));
     inicializarTablero(*laberinto);
@@ -322,6 +330,10 @@ void cargarLaberinto(Tablero *laberinto)
     agujerearLaberinto(*laberinto);
     laberinto->celdas[1][0] = 'E';
     generarSalida(laberinto);
+
+    generarFantasmas(laberinto, fantasmas, config.maxFantasmas);
+    colocarVidasExtra(laberinto, config.maxVidasExtra);
+    colocarPremios(laberinto, config.maxPremios);
 }
 
 void **crear_matriz(int filas, int columnas, unsigned tamElem)
@@ -518,6 +530,10 @@ void dibujarTablero(SDL_Renderer *renderer, Tablero *laberinto, Jugador *j, TTF_
                 SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
             else if(celda == 'F')
                 SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+            else if(celda == 'V')
+                SDL_SetRenderDrawColor(renderer, 128, 0, 128, 255); 
+            else if(celda == 'P')
+                SDL_SetRenderDrawColor(renderer, 255, 215, 0, 255);
             else
                 SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
 
@@ -527,6 +543,8 @@ void dibujarTablero(SDL_Renderer *renderer, Tablero *laberinto, Jugador *j, TTF_
 
     sprintf(mensajeHUD, "Vidas: %d", j->vidas);
     renderizarHUD(renderer, fuente, mensajeHUD, COLOR_AZUL, 1, 2);
+    sprintf(mensajeHUD, "Puntaje: %d", j->puntaje);
+    renderizarHUD(renderer, fuente, mensajeHUD, COLOR_AZUL, 200, 2);
 }
 
 //FUNCIONES DE FANTASMAS//
@@ -569,11 +587,11 @@ int moverFantasmas(Tablero *laberinto, Fantasma *fantasmas, Jugador *jugador, in
         dirX = jugador->posX - fantasmas[I].posX;
         dirY = jugador->posY - fantasmas[I].posY;
 
-        /*A continuacion, basicamente, hay un 90% de probabilidad de que el fantasma
-          se mueva en direccion al jugador (puede cambiarse este numero), y un 10% de que se mueva random,
+        /*A continuacion, basicamente, hay un X% de probabilidad de que el fantasma
+          se mueva en direccion al jugador (puede cambiarse este numero), y un (1-X)% de que se mueva random,
           de esta forma el fantasma es inteligente pero tampoco es imposible
           de ganar*/
-        if(rand() % 100 < 90)
+        if(rand() % 100 < 60)
         {
             if(abs(dirX) > abs(dirY))
                 direccion = (dirX > 0) ? 0 : 1; //Derecha o Izquierda
@@ -640,6 +658,44 @@ int encontrarFantasma(Fantasma *fantasmas, int maxFantasmas, int x, int y)
 }
 
 
+//FUNCIONES DE PREMIOS Y VIDAS//
+void colocarVidasExtra(Tablero *laberinto, int vidasExtra)
+{
+    int colocadas = 0, x, y;
+
+    while(colocadas < vidasExtra)
+    {
+        y = rand() % laberinto->filas;
+        x = rand() % laberinto->columnas;
+
+        if(laberinto->celdas[y][x] == ' ' && laberinto->celdas[y][x] != 'E' && laberinto->celdas[y][x] != 'S'
+            && laberinto->celdas[y][x] != 'F' && laberinto->celdas[y][x] != 'J')
+        {
+            laberinto->celdas[y][x] = 'V';
+            colocadas++;
+        }
+    }
+}
+
+void colocarPremios(Tablero *laberinto, int maxPremios)
+{
+    int colocados = 0, x, y;
+
+    while(colocados < maxPremios)
+    {        
+        y = rand() % laberinto->filas;
+        x = rand() % laberinto->columnas;
+
+        if(laberinto->celdas[y][x] == ' ' && laberinto->celdas[y][x] != 'E' 
+            && laberinto->celdas[y][x] != 'S' && laberinto->celdas[y][x] != 'F' 
+            && laberinto->celdas[y][x] != 'J' && laberinto->celdas[y][x] != 'V')
+        {
+            laberinto->celdas[y][x] = 'P';
+            colocados++;
+        }
+    }
+}
+
 
 //FUNCIONES DE PARTIDA//
 void Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFantasmas, 
@@ -703,9 +759,10 @@ void Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFan
 
 int realizarMovimiento(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFantasmas, char direccion)
 {
-    int nuevaFila = jugador->posY;
-    int nuevaColumna = jugador->posX;
-    int fantasmaBuscado;
+    int nuevaFila = jugador->posY,
+        nuevaColumna = jugador->posX,
+        fantasmaBuscado,
+        puntosGanados;
 
     switch(direccion = tolower(direccion))
     {
@@ -740,6 +797,16 @@ int realizarMovimiento(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas
         if(jugador->vidas <= 0)
             return DERROTA;
     }
+
+    if(laberinto->celdas[nuevaFila][nuevaColumna] == 'V')
+        jugador->vidas++;
+
+    if(laberinto->celdas[nuevaFila][nuevaColumna] == 'P')
+    {
+        puntosGanados = MIN_PUNTOS + rand() % (MAX_PUNTOS - MIN_PUNTOS + 1);
+        jugador->puntaje += puntosGanados;
+    }
+
 
     laberinto->celdas[jugador->posY][jugador->posX] = ' ';
     jugador->posY = nuevaFila;

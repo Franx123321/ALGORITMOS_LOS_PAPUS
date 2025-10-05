@@ -31,8 +31,10 @@
 
 #define MIN_FILAS 8
 #define MIN_COLUMNAS 8
-#define MAX_FILAS 30    //Es lo maximo que se ve bien en pantalla
-#define MAX_COLUMNAS 50
+#define MAX_FILAS 25    //Es lo maximo que se ve bien en pantalla, igualmente depende del tamaño de la ventana y de las celdas
+#define MAX_COLUMNAS 50 //Podria ser bastante mas, pero seria una fea relacion filas/columnas
+#define MIN_PUNTOS 10
+#define MAX_PUNTOS 50
 
 #define MOV_INVALIDO 0
 #define MOV_VALIDO 1
@@ -41,7 +43,7 @@
 #define DERROTA -1
 
 #define TAM_CELDA 30 //Tamaño en pixeles
-#define MARGEN 40 //Margen superior para el HUD
+#define MARGEN 40    //Margen superior para el HUD
 
 #define ERROR_ARCH 0
 #define ERROR_SDL 0
@@ -51,7 +53,6 @@
 #define COLOR_BLANCO (SDL_Color){255, 255, 255, 255}
 #define COLOR_ROJO (SDL_Color){255, 0, 0, 255}
 #define COLOR_AZUL (SDL_Color){0, 0, 255, 255}
-
 
 typedef struct sNodo{
     void *dato;

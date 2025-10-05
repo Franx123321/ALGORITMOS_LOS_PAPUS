@@ -1,6 +1,6 @@
-filas=20
-columnas=20
+filas=24
+columnas=39
 vidas_inicio=3
 maximo_numero_fantasmas=5
-maximo_numero_premios=3
-maximo_vidas_extra=1
+maximo_numero_premios=5
+maximo_vidas_extra=3
