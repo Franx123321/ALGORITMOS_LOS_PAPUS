@@ -5,7 +5,8 @@
 int leerConfig(Configuracion *config);
 
 //SDL//
-int inicializarSDL(SDL_Window **ventana, SDL_Renderer **renderer, int ancho, int alto);
+int inicializarSDL(SDL_Window **ventana, SDL_Renderer **renderer, TTF_Font **fuente, TTF_Font **fuenteHud, 
+                    const Configuracion *config, int *ancho, int *alto, int *tamFuente, int *tamFuenteHud);
 void destruirSDL(SDL_Window **ventana, SDL_Renderer **renderer, 
                     TTF_Font **fuente, TTF_Font **fuenteHud);
 int renderizarTexto(SDL_Renderer *renderer, TTF_Font *fuente, 
@@ -57,10 +58,8 @@ int main(int argc, char *argv[])
     Fantasma *fantasmas;
     SDL_Window *ventana = NULL;
     SDL_Renderer *renderer = NULL;
-    TTF_Font *fuente, *fuenteHud;
-    int ancho, alto,
-        tamFuente, tamFuenteHud, base, tamMedio;
-    float escalaX, escalaY, escala;
+    TTF_Font *fuente = NULL, *fuenteHud = NULL;
+    int ancho, alto, tamFuente, tamFuenteHud;
 
     srand(time(NULL));
 
@@ -93,36 +92,11 @@ int main(int argc, char *argv[])
     //Aca se guarda la disposicion inicial del laberinto en un archivo de texto
     guardarLaberinto(&laberinto);
 
-    //SDL//
-    ancho = laberinto.columnas * TAM_CELDA;
-    alto = laberinto.filas * TAM_CELDA + MARGEN;
-    if(ancho < MIN_ANCHO || alto < MIN_ALTO) //Asegura un tamaño minimo de ventana, por temas de textos largos blabla Domingo 23:30
+    //SDL//   
+    if(inicializarSDL(&ventana, &renderer, &fuente, &fuenteHud, &config, &ancho, &alto, &tamFuente, &tamFuenteHud) != TODO_BIEN)
     {
-        escalaX = (float)MIN_ANCHO / ancho;
-        escalaY = (float)MIN_ALTO / alto;
-        escala = (escalaX > escalaY ? escalaX : escalaY);
-
-        ancho = (int)(ancho * escala);
-        alto = (int)(alto * escala);
-    }   
-    inicializarSDL(&ventana, &renderer, ancho, alto);
-    base = (ancho < alto ? ancho : alto); 
-    tamMedio = (config.columnas + config.filas) / 2;
-    tamFuente = (int)((base / (tamMedio * 0.2)));
-    tamFuenteHud = (int)((base / (tamMedio * 1.2)));
-    if(tamFuente < 12) 
-        tamFuente = 12; //Tamaño minimo de fuente para que se lea bien
-    if(tamFuente > 48)
-        tamFuente = 48; //Tamaño maximo de fuente para que no sea gigante
-    if(tamFuenteHud < 8) 
-        tamFuenteHud = 8; //Lo mismo
-    if(tamFuenteHud > 32)
-        tamFuenteHud = 32; //Lo mismisimo
-    fuente = TTF_OpenFont("assets/Sora-Bold.ttf", tamFuente);
-    fuenteHud = TTF_OpenFont("assets/Sora-Bold.ttf", tamFuenteHud);
-    if(!fuente || !fuenteHud)
-    {
-        printf("\nERROR al cargar una fuente: %s", TTF_GetError());
+        free(fantasmas);
+        destruir_matriz((void **)laberinto.celdas, laberinto.filas);
         exit(1);
     }
 
@@ -234,8 +208,24 @@ int leerConfig(Configuracion *config)
 
 
 //FUNCIONES SDL//
-int inicializarSDL(SDL_Window **ventana, SDL_Renderer **renderer, int ancho, int alto)
+int inicializarSDL(SDL_Window **ventana, SDL_Renderer **renderer, TTF_Font **fuente, TTF_Font **fuenteHud, 
+                    const Configuracion *config, int *ancho, int *alto, int *tamFuente, int *tamFuenteHud)
 {
+    float escalaX, escalaY, escala;
+    int base, tamMedio;
+
+    *ancho = config->columnas * TAM_CELDA;
+    *alto = config->filas * TAM_CELDA + MARGEN;
+    
+    if(*ancho < MIN_ANCHO || *alto < MIN_ALTO)
+    {
+        escalaX = (float)MIN_ANCHO / *ancho;
+        escalaY = (float)MIN_ALTO / *alto;
+        escala = (escalaX > escalaY ? escalaX : escalaY);
+
+        *ancho = (int)(*ancho * escala);
+        *alto = (int)(*alto * escala);
+    }
     if(SDL_Init(SDL_INIT_VIDEO) < 0)
     {
         printf("\nERROR al inicializar la ventana: %s", SDL_GetError());
@@ -248,11 +238,10 @@ int inicializarSDL(SDL_Window **ventana, SDL_Renderer **renderer, int ancho, int
         return ERROR_SDL;
     }
 
-    /* Prefer linear scaling for smoother resizes */
     SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1");
 
-    /* Create a resizable window so the user can change size freely */
-    *ventana = SDL_CreateWindow("Laberintos y Fantasmas", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, ancho, alto, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
+    *ventana = SDL_CreateWindow("Laberintos y Fantasmas", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 
+                                *ancho, *alto, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
     if(!*ventana)
     {
         printf("\nERROR al crear la ventana: %s", SDL_GetError());
@@ -261,7 +250,7 @@ int inicializarSDL(SDL_Window **ventana, SDL_Renderer **renderer, int ancho, int
         return ERROR_SDL;
     }
 
-    /* Use an accelerated renderer and enable vsync for stable frame pacing */
+
     *renderer = SDL_CreateRenderer(*ventana, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
     if(!*renderer)
     {
@@ -272,13 +261,36 @@ int inicializarSDL(SDL_Window **ventana, SDL_Renderer **renderer, int ancho, int
         return ERROR_SDL;
     }
 
-    /* Set a logical size so all drawing stays in game coordinates and SDL scales to the window size */
-    SDL_RenderSetLogicalSize(*renderer, ancho, alto);
-    /* Disable integer-only scaling to allow smooth scaling */
+    SDL_RenderSetLogicalSize(*renderer, *ancho, *alto);
     SDL_RenderSetIntegerScale(*renderer, SDL_FALSE);
-
-    /* Prevent the window from becoming smaller than the minimum UI size */
     SDL_SetWindowMinimumSize(*ventana, MIN_ANCHO, MIN_ALTO);
+
+    base = (*ancho < *alto ? *ancho : *alto);
+    tamMedio = (config->columnas + config->filas) / 2;
+
+    *tamFuente = (int)((base / (tamMedio * 0.2)));
+    *tamFuenteHud = (int)((base / (tamMedio * 1.2)));
+
+    if(*tamFuente < 12) 
+        *tamFuente = 12; //Tamaño minimo de fuente para que se lea bien
+    if(*tamFuente > 48)
+        *tamFuente = 48; //Tamaño maximo de fuente para que no sea gigante
+    if(*tamFuenteHud < 8) 
+        *tamFuenteHud = 8; //Lo mismo
+    if(*tamFuenteHud > 32)
+        *tamFuenteHud = 32; //Lo mismisimo
+
+    *fuente = TTF_OpenFont("assets/Sora-Bold.ttf", *tamFuente);
+    *fuenteHud = TTF_OpenFont("assets/Sora-Bold.ttf", *tamFuenteHud);
+    if(!*fuente || !*fuenteHud)
+    {
+        printf("\nERROR al cargar una fuente: %s", TTF_GetError());
+        SDL_DestroyRenderer(*renderer);
+        SDL_DestroyWindow(*ventana);
+        TTF_Quit();
+        SDL_Quit();
+        return ERROR_SDL;
+    }
 
     return TODO_BIEN;
 }
