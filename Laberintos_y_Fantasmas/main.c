@@ -1,5 +1,6 @@
 #define SDL_MAIN_HANDLED
 #include "Macros.h"
+#include "cola.h"
 
 //CONFIGURACION//
 int leerConfig(Configuracion *config);
@@ -42,8 +43,9 @@ void colocarVidasExtra(Tablero *laberinto, int vidasExtra);
 void colocarPremios(Tablero *laberinto, int maxPremios);
 
 //PARTIDA//
-void Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, 
-            int maxFantasmas, SDL_Window *ventana, SDL_Renderer *renderer, TTF_Font **fuentePtr, TTF_Font **fuenteHudPtr, int tamFuenteBase, int tamFuenteHudBase, int ancho, int alto);
+void Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFantasmas, SDL_Window *ventana,
+            SDL_Renderer *renderer, TTF_Font **fuentePtr, TTF_Font **fuenteHudPtr, int tamFuenteBase, 
+            int tamFuenteHudBase, int ancho, int alto, tCola *ColaMovimientos);
 int realizarMovimiento(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFantasmas, char direccion);
 int pantallaInicio(SDL_Window *ventana, SDL_Renderer *renderer, TTF_Font *fuente, int ancho, int alto);
 void victoria(SDL_Window *ventana, SDL_Renderer *renderer, TTF_Font *fuente, int ancho, int alto, int puntaje);
@@ -60,6 +62,7 @@ int main(int argc, char *argv[])
     SDL_Renderer *renderer = NULL;
     TTF_Font *fuente = NULL, *fuenteHud = NULL;
     int ancho, alto, tamFuente, tamFuenteHud;
+    tCola ColaMovimientos;
 
     srand(time(NULL));
 
@@ -101,11 +104,15 @@ int main(int argc, char *argv[])
     }
 
     //LOGICA DE JUEGO//
-    Jugar(&laberinto, &jugador, fantasmas, config.maxFantasmas, ventana, renderer, &fuente, &fuenteHud, tamFuente, tamFuenteHud, ancho, alto);
+    crearCola(&ColaMovimientos);
+    Jugar(&laberinto, &jugador, fantasmas, config.maxFantasmas, ventana, renderer, &fuente, &fuenteHud,
+            tamFuente, tamFuenteHud, ancho, alto, &ColaMovimientos);
 
     //DESTRUCTORES//
     destruir_matriz((void **)laberinto.celdas, laberinto.filas);
     destruirSDL(&ventana, &renderer, &fuente, &fuenteHud);
+    free(fantasmas);
+    vaciarCola(&ColaMovimientos);
 
 
     return 0;
@@ -774,10 +781,11 @@ void colocarPremios(Tablero *laberinto, int maxPremios)
 
 
 //FUNCIONES DE PARTIDA//
-void Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFantasmas, 
-            SDL_Window *ventana, SDL_Renderer *renderer, TTF_Font **fuentePtr, TTF_Font **fuenteHudPtr, int tamFuenteBase, int tamFuenteHudBase, int ancho, int alto)
+void Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFantasmas, SDL_Window *ventana, 
+            SDL_Renderer *renderer, TTF_Font **fuentePtr, TTF_Font **fuenteHudPtr, int tamFuenteBase, 
+            int tamFuenteHudBase, int ancho, int alto, tCola *ColaMovimientos)
 {
-    char movimiento = 0;
+    char movimiento = 0, aseguradorMovimiento;
     int estado = 1, jugando = 1, tamCeldaReal, winW, winH, 
         vpW, vpH, totalWidth, offsetX, tamFuenteHudDeseado;
     float escalaX, escalaY, escala, escalaTexto, tamCeldaVista;
@@ -787,6 +795,8 @@ void Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFan
     int tamFuenteHudActual = 0;
     TTF_Font *fuenteHudLocal = NULL;
     SDL_Event evento;
+
+    SDL_GetWindowSize(ventana, &winW, &winH);
 
     /* Inicializar punteros locales a las fuentes pasadas por referencia */
     if (fuentePtr) 
@@ -825,27 +835,39 @@ void Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFan
                 switch(evento.key.keysym.sym)
                 {
                     case SDLK_w: movimiento = 'w';
+                                 if(!encolar(ColaMovimientos, &movimiento, sizeof(char)))
+                                    printf("No se pudo realizar un movimiento.");
                                  break;
                     case SDLK_s: movimiento = 's';
-                                 break;
+                                 if(!encolar(ColaMovimientos, &movimiento, sizeof(char)))
+                                    printf("No se pudo realizar un movimiento.");                                 break;
                     case SDLK_a: movimiento = 'a';
+                                 if(!encolar(ColaMovimientos, &movimiento, sizeof(char)))
+                                    printf("No se pudo realizar un movimiento.");
                                  break;
                     case SDLK_d: movimiento = 'd';
+                                 if(!encolar(ColaMovimientos, &movimiento, sizeof(char)))
+                                    printf("No se pudo realizar un movimiento.");
                                  break;
                     case SDLK_ESCAPE: jugando = 0;
                                       break;
-                    default: movimiento = 0;
+                    default: movimiento = 'z';
+                             if(!encolar(ColaMovimientos, &movimiento, sizeof(char)))
+                                    printf("No se pudo realizar un movimiento.");
                              break;
                 }
-                if(movimiento)
+                if(jugando && desencolar(ColaMovimientos, &aseguradorMovimiento, sizeof(char)))
                 {
-                    estado = realizarMovimiento(laberinto, jugador, fantasmas, maxFantasmas, movimiento);
+                    estado = realizarMovimiento(laberinto, jugador, fantasmas, maxFantasmas, aseguradorMovimiento);
                     if(estado == DERROTA)
                         jugando = 0;
-                    if(moverFantasmas(laberinto, fantasmas, jugador, maxFantasmas) == DERROTA)
+                    if(estado != MOV_INVALIDO)
                     {
-                        estado = DERROTA;
-                        jugando = 0;
+                        if(moverFantasmas(laberinto, fantasmas, jugador, maxFantasmas) == DERROTA)
+                        {
+                            estado = DERROTA;
+                            jugando = 0;
+                        }
                     }
                 }
             }

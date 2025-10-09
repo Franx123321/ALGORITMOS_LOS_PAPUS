@@ -28,6 +28,7 @@
 #endif
 
 #define RESERVAR_MEM(X,Y,Z,W) (((X) = (typeof(X)) malloc(Y)) == NULL ||((Z) = malloc(W)) == NULL ? free(X), 0 : 1 )
+#define MIN(X,Y) ((X < Y) ? X : Y)
 
 #define MIN_FILAS 15
 #define MIN_COLUMNAS 15
@@ -35,6 +36,8 @@
 #define MAX_COLUMNAS 50 //Podria ser bastante mas, pero seria una fea relacion filas/columnas
 #define MIN_PUNTOS 10
 #define MAX_PUNTOS 50
+#define DISTANCIA_MINIMA_ENTRADA_SALIDA 3
+#define DISTANCIA_MINIMA_ENTRE_OBJETOS 2
 
 #define MOV_INVALIDO 0
 #define MOV_VALIDO 1
