@@ -1,4 +1,7 @@
-.vscode
-.exe
-.depend
-.layout
+*.vscode
+bin/
+obj/
+*.depend
+*.layout
+
+laberinto.txt
