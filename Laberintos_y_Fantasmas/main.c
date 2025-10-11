@@ -6,17 +6,17 @@
 int leerConfig(Configuracion *config);
 
 //SDL//
-int inicializarSDL(SDL_Window **ventana, SDL_Renderer **renderer, TTF_Font **fuente, TTF_Font **fuenteHud, 
+int inicializarSDL(SDL_Window **ventana, SDL_Renderer **renderer, TTF_Font **fuente, TTF_Font **fuenteHud,
                     const Configuracion *config, int *ancho, int *alto, int *tamFuente, int *tamFuenteHud);
-void destruirSDL(SDL_Window **ventana, SDL_Renderer **renderer, 
+void destruirSDL(SDL_Window **ventana, SDL_Renderer **renderer,
                     TTF_Font **fuente, TTF_Font **fuenteHud);
-int renderizarTexto(SDL_Renderer *renderer, TTF_Font *fuente, 
+int renderizarTexto(SDL_Renderer *renderer, TTF_Font *fuente,
                     const char *mensaje, SDL_Color color, int ancho, int alto, int tiempo);
 void renderizarHUD(SDL_Renderer *renderer, TTF_Font *fuente, const char *mensaje,
                     SDL_Color color, int x, int y, float escala);
-void centrarRenderizado(SDL_Renderer *renderer, TTF_Font *fuente, const char *texto, 
+void centrarRenderizado(SDL_Renderer *renderer, TTF_Font *fuente, const char *texto,
                         SDL_Color color, int ancho, int alto, float escala);
-int renderizarTexto(SDL_Renderer *renderer, TTF_Font *fuente, 
+int renderizarTexto(SDL_Renderer *renderer, TTF_Font *fuente,
                     const char *mensaje, SDL_Color color, int ancho, int alto, int tiempo);
 
 
@@ -44,7 +44,7 @@ void colocarPremios(Tablero *laberinto, int maxPremios);
 
 //PARTIDA//
 void Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFantasmas, SDL_Window *ventana,
-            SDL_Renderer *renderer, TTF_Font **fuentePtr, TTF_Font **fuenteHudPtr, int tamFuenteBase, 
+            SDL_Renderer *renderer, TTF_Font **fuentePtr, TTF_Font **fuenteHudPtr, int tamFuenteBase,
             int tamFuenteHudBase, int ancho, int alto, tCola *ColaMovimientos);
 int realizarMovimiento(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFantasmas, char direccion);
 int pantallaInicio(SDL_Window *ventana, SDL_Renderer *renderer, TTF_Font *fuente, int ancho, int alto);
@@ -95,7 +95,7 @@ int main(int argc, char *argv[])
     //Aca se guarda la disposicion inicial del laberinto en un archivo de texto
     guardarLaberinto(&laberinto);
 
-    //SDL//   
+    //SDL//
     if(inicializarSDL(&ventana, &renderer, &fuente, &fuenteHud, &config, &ancho, &alto, &tamFuente, &tamFuenteHud) != TODO_BIEN)
     {
         free(fantasmas);
@@ -215,7 +215,7 @@ int leerConfig(Configuracion *config)
 
 
 //FUNCIONES SDL//
-int inicializarSDL(SDL_Window **ventana, SDL_Renderer **renderer, TTF_Font **fuente, TTF_Font **fuenteHud, 
+int inicializarSDL(SDL_Window **ventana, SDL_Renderer **renderer, TTF_Font **fuente, TTF_Font **fuenteHud,
                     const Configuracion *config, int *ancho, int *alto, int *tamFuente, int *tamFuenteHud)
 {
     float escalaX, escalaY, escala;
@@ -223,7 +223,7 @@ int inicializarSDL(SDL_Window **ventana, SDL_Renderer **renderer, TTF_Font **fue
 
     *ancho = config->columnas * TAM_CELDA;
     *alto = config->filas * TAM_CELDA + MARGEN;
-    
+
     if(*ancho < MIN_ANCHO || *alto < MIN_ALTO)
     {
         escalaX = (float)MIN_ANCHO / *ancho;
@@ -235,19 +235,19 @@ int inicializarSDL(SDL_Window **ventana, SDL_Renderer **renderer, TTF_Font **fue
     }
     if(SDL_Init(SDL_INIT_VIDEO) < 0)
     {
-        printf("\nERROR al inicializar la ventana: %s", SDL_GetError());
+        printf("\nERROR al inicializar el sistema grafico: %s", SDL_GetError());
         return ERROR_SDL;
     }
     if(TTF_Init() < 0)
     {
-        printf("\nERROR al inicializar la ventana: %s", TTF_GetError());
+        printf("\nERROR al inicializar el sistema de fuentes: %s", TTF_GetError());
         SDL_Quit();
         return ERROR_SDL;
     }
 
     SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1");
 
-    *ventana = SDL_CreateWindow("Laberintos y Fantasmas", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 
+    *ventana = SDL_CreateWindow("Laberintos y Fantasmas", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
                                 *ancho, *alto, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
     if(!*ventana)
     {
@@ -261,7 +261,7 @@ int inicializarSDL(SDL_Window **ventana, SDL_Renderer **renderer, TTF_Font **fue
     *renderer = SDL_CreateRenderer(*ventana, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
     if(!*renderer)
     {
-        printf("\nERROR al renderizar: %s", SDL_GetError());
+        printf("\nERROR al crear renderizador: %s", SDL_GetError());
         SDL_DestroyWindow(*ventana);
         TTF_Quit();
         SDL_Quit();
@@ -278,11 +278,11 @@ int inicializarSDL(SDL_Window **ventana, SDL_Renderer **renderer, TTF_Font **fue
     *tamFuente = (int)((base / (tamMedio * 0.2)));
     *tamFuenteHud = (int)((base / (tamMedio * 1.2)));
 
-    if(*tamFuente < 12) 
+    if(*tamFuente < 12)
         *tamFuente = 12; //Tamaño minimo de fuente para que se lea bien
     if(*tamFuente > 48)
         *tamFuente = 48; //Tamaño maximo de fuente para que no sea gigante
-    if(*tamFuenteHud < 8) 
+    if(*tamFuenteHud < 8)
         *tamFuenteHud = 8; //Lo mismo
     if(*tamFuenteHud > 32)
         *tamFuenteHud = 32; //Lo mismisimo
@@ -292,6 +292,10 @@ int inicializarSDL(SDL_Window **ventana, SDL_Renderer **renderer, TTF_Font **fue
     if(!*fuente || !*fuenteHud)
     {
         printf("\nERROR al cargar una fuente: %s", TTF_GetError());
+
+        if (*fuente)
+            TTF_CloseFont(*fuente);
+
         SDL_DestroyRenderer(*renderer);
         SDL_DestroyWindow(*ventana);
         TTF_Quit();
@@ -353,7 +357,7 @@ void renderizarHUD(SDL_Renderer *renderer, TTF_Font *fuente, const char *mensaje
 
     /* Renderizar texto con TTF blended para mejor calidad */
     superficie = TTF_RenderText_Blended(fuente, mensaje, color);
-    if (!superficie) 
+    if (!superficie)
     {
         printf("\nERROR al renderizar un texto: %s", TTF_GetError());
         return;
@@ -361,7 +365,7 @@ void renderizarHUD(SDL_Renderer *renderer, TTF_Font *fuente, const char *mensaje
 
     texto = SDL_CreateTextureFromSurface(renderer, superficie);
     SDL_FreeSurface(superficie);
-    if (!texto) 
+    if (!texto)
     {
         printf("\nERROR al crear una textura: %s", SDL_GetError());
         return;
@@ -390,13 +394,18 @@ void centrarRenderizado(SDL_Renderer *renderer, TTF_Font *fuente, const char *te
     renderizarHUD(renderer, fuente, texto, color, x, alto, escala);
 }
 
-void destruirSDL(SDL_Window **ventana, SDL_Renderer **renderer, 
+void destruirSDL(SDL_Window **ventana, SDL_Renderer **renderer,
                     TTF_Font **fuente, TTF_Font **fuenteHud)
 {
     if(*fuente)
     {
         TTF_CloseFont(*fuente);
         *fuente = NULL;
+    }
+    if(*fuenteHud)
+    {
+        TTF_CloseFont(*fuenteHud);
+        *fuenteHud = NULL;
     }
     if(*renderer)
     {
@@ -567,7 +576,7 @@ int guardarLaberinto(Tablero *laberinto)
 {
     int I, J;
     FILE *archLaberinto = fopen("laberinto.txt", "wt");
-    if (!archLaberinto) 
+    if (!archLaberinto)
     {
         perror("Error al abrir archivo de laberinto");
         return ERROR_ARCH;
@@ -587,7 +596,7 @@ int guardarLaberinto(Tablero *laberinto)
     return TODO_BIEN;
 }
 
-void dibujarTablero(SDL_Renderer *renderer, Tablero *laberinto, Jugador *j, TTF_Font *fuente, 
+void dibujarTablero(SDL_Renderer *renderer, Tablero *laberinto, Jugador *j, TTF_Font *fuente,
                     int tamCeldaReal, int offsetX, float escalaTexto)
 {
     int I, J;
@@ -615,7 +624,7 @@ void dibujarTablero(SDL_Renderer *renderer, Tablero *laberinto, Jugador *j, TTF_
             else if(celda == 'F')
                 SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
             else if(celda == 'V')
-                SDL_SetRenderDrawColor(renderer, 128, 0, 128, 255); 
+                SDL_SetRenderDrawColor(renderer, 128, 0, 128, 255);
             else if(celda == 'P')
                 SDL_SetRenderDrawColor(renderer, 255, 215, 0, 255);
             else
@@ -669,7 +678,7 @@ int moverFantasmas(Tablero *laberinto, Fantasma *fantasmas, Jugador *jugador, in
     {
         if(!fantasmas[I].vivo)
             continue;
-    
+
         dirX = jugador->posX - fantasmas[I].posX;
         dirY = jugador->posY - fantasmas[I].posY;
 
@@ -696,14 +705,14 @@ int moverFantasmas(Tablero *laberinto, Fantasma *fantasmas, Jugador *jugador, in
             nuevoX = fantasmas[I].posX + posibleX[direccion];
             nuevoY = fantasmas[I].posY + posibleY[direccion];
 
-            if(nuevoX >= 0 && nuevoX < laberinto->columnas 
-                && nuevoY >= 0 && nuevoY < laberinto->filas 
-                && laberinto->celdas[nuevoY][nuevoX] != '#' 
-                && laberinto->celdas[nuevoY][nuevoX] != 'S' 
+            if(nuevoX >= 0 && nuevoX < laberinto->columnas
+                && nuevoY >= 0 && nuevoY < laberinto->filas
+                && laberinto->celdas[nuevoY][nuevoX] != '#'
+                && laberinto->celdas[nuevoY][nuevoX] != 'S'
                 && laberinto->celdas[nuevoY][nuevoX] != 'E'
                 && laberinto->celdas[nuevoY][nuevoX] != 'F')
             {
-                laberinto->celdas[fantasmas[I].posY][fantasmas[I].posX] = fantasmas[I].quePisa; 
+                laberinto->celdas[fantasmas[I].posY][fantasmas[I].posX] = fantasmas[I].quePisa;
                 fantasmas[I].quePisa = laberinto->celdas[nuevoY][nuevoX]; //Guarda lo que pisa para restaurarlo despues
 
                 fantasmas[I].posX = nuevoX;
@@ -725,7 +734,7 @@ int moverFantasmas(Tablero *laberinto, Fantasma *fantasmas, Jugador *jugador, in
     }
 
     return TODO_BIEN;
-}   
+}
 
 int encontrarFantasma(Fantasma *fantasmas, int maxFantasmas, int x, int y)
 {
@@ -765,12 +774,12 @@ void colocarPremios(Tablero *laberinto, int maxPremios)
     int colocados = 0, x, y;
 
     while(colocados < maxPremios)
-    {        
+    {
         y = rand() % laberinto->filas;
         x = rand() % laberinto->columnas;
 
-        if(laberinto->celdas[y][x] == ' ' && laberinto->celdas[y][x] != 'E' 
-            && laberinto->celdas[y][x] != 'S' && laberinto->celdas[y][x] != 'F' 
+        if(laberinto->celdas[y][x] == ' ' && laberinto->celdas[y][x] != 'E'
+            && laberinto->celdas[y][x] != 'S' && laberinto->celdas[y][x] != 'F'
             && laberinto->celdas[y][x] != 'J' && laberinto->celdas[y][x] != 'V')
         {
             laberinto->celdas[y][x] = 'P';
@@ -781,12 +790,12 @@ void colocarPremios(Tablero *laberinto, int maxPremios)
 
 
 //FUNCIONES DE PARTIDA//
-void Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFantasmas, SDL_Window *ventana, 
-            SDL_Renderer *renderer, TTF_Font **fuentePtr, TTF_Font **fuenteHudPtr, int tamFuenteBase, 
+void Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFantasmas, SDL_Window *ventana,
+            SDL_Renderer *renderer, TTF_Font **fuentePtr, TTF_Font **fuenteHudPtr, int tamFuenteBase,
             int tamFuenteHudBase, int ancho, int alto, tCola *ColaMovimientos)
 {
     char movimiento = 0, aseguradorMovimiento;
-    int estado = 1, jugando = 1, tamCeldaReal, winW, winH, 
+    int estado = 1, jugando = 1, tamCeldaReal, winW, winH,
         vpW, vpH, totalWidth, offsetX, tamFuenteHudDeseado;
     float escalaX, escalaY, escala, escalaTexto, tamCeldaVista;
     /* Variables para manejar fuentes */
@@ -795,18 +804,19 @@ void Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFan
     int tamFuenteHudActual = 0;
     TTF_Font *fuenteHudLocal = NULL;
     SDL_Event evento;
+    SDL_Rect vp, vpActual;
 
     SDL_GetWindowSize(ventana, &winW, &winH);
 
     /* Inicializar punteros locales a las fuentes pasadas por referencia */
-    if (fuentePtr) 
-        fuenteLocal = *fuentePtr; 
-    else 
+    if (fuentePtr)
+        fuenteLocal = *fuentePtr;
+    else
         fuenteLocal = NULL;
 
-    if (fuenteHudPtr) 
-        fuenteHudOriginal = *fuenteHudPtr; 
-    else 
+    if (fuenteHudPtr)
+        fuenteHudOriginal = *fuenteHudPtr;
+    else
         fuenteHudOriginal = NULL;
 
     if(pantallaInicio(ventana, renderer, fuenteHudOriginal, ancho, alto) == SALIR)
@@ -827,7 +837,12 @@ void Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFan
                 if (escala <= 0.0f) escala = 1.0f;
                 vpW = (int)(ancho * escala);
                 vpH = (int)(alto * escala);
-                SDL_Rect vp = { (winW - vpW) / 2, (winH - vpH) / 2, vpW, vpH };
+
+                vp.x = (winW - vpW) / 2;
+                vp.y = (winH - vpH) / 2;
+                vp.w = vpW;
+                vp.h = vpH;
+
                 SDL_RenderSetViewport(renderer, &vp);
             }
             else if(evento.type == SDL_KEYDOWN)
@@ -840,7 +855,8 @@ void Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFan
                                  break;
                     case SDLK_s: movimiento = 's';
                                  if(!encolar(ColaMovimientos, &movimiento, sizeof(char)))
-                                    printf("No se pudo realizar un movimiento.");                                 break;
+                                    printf("No se pudo realizar un movimiento.");
+                                 break;
                     case SDLK_a: movimiento = 'a';
                                  if(!encolar(ColaMovimientos, &movimiento, sizeof(char)))
                                     printf("No se pudo realizar un movimiento.");
@@ -878,31 +894,30 @@ void Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFan
         SDL_RenderClear(renderer);
 
         tamCeldaReal = (ancho / laberinto->columnas);
-        if (tamCeldaReal <= 0) 
+        if (tamCeldaReal <= 0)
             tamCeldaReal = 1;
 
         totalWidth = tamCeldaReal * laberinto->columnas;
         offsetX = (ancho - totalWidth) / 2;
-        if (offsetX < 0) 
+        if (offsetX < 0)
             offsetX = 0;
 
-        SDL_Rect vpActual;
         SDL_RenderGetViewport(renderer, &vpActual);
         escalaTexto = 1.0f;
-        if (vpActual.w > 0 && laberinto->columnas > 0) 
+        if (vpActual.w > 0 && laberinto->columnas > 0)
         {
             tamCeldaVista = (float)vpActual.w / (float)laberinto->columnas;
             escalaTexto = tamCeldaVista / (float)TAM_CELDA;
-            if (escalaTexto <= 0.0f) 
+            if (escalaTexto <= 0.0f)
                 escalaTexto = 1.0f;
         }
 
         /* Calcular tamaño deseado de fuente para el HUD basado en el tamano de celda visible */
         tamFuenteHudDeseado = (int)(tamCeldaVista * 0.6f);
-        if (tamFuenteHudDeseado < 8) 
+        if (tamFuenteHudDeseado < 8)
             tamFuenteHudDeseado = 8;
 
-        if (tamFuenteHudDeseado != tamFuenteHudActual) 
+        if (tamFuenteHudDeseado != tamFuenteHudActual)
         {
             /* Recrear la fuente HUD local */
             if (fuenteHudLocal)
@@ -911,7 +926,7 @@ void Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFan
                 fuenteHudLocal = NULL;
             }
             fuenteHudLocal = TTF_OpenFont("assets/Sora-Bold.ttf", tamFuenteHudDeseado);
-            if (!fuenteHudLocal) 
+            if (!fuenteHudLocal)
                 /* Si falla, mantenemos la fuente original */
                 fuenteHudLocal = fuenteHudOriginal;
             else
@@ -928,13 +943,13 @@ void Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFan
         SDL_Delay(1000 / 60);
     }
 
-    if(estado == VICTORIA) 
+    if(estado == VICTORIA)
         victoria(ventana, renderer, fuenteLocal, ancho, alto, jugador->puntaje);
     else if(estado == DERROTA)
         derrota(ventana, renderer, fuenteLocal, ancho, alto);
 
     /* Liberar la fuente HUD local si fue creada */
-    if (fuenteHudLocal && fuenteHudLocal != fuenteHudOriginal) 
+    if (fuenteHudLocal && fuenteHudLocal != fuenteHudOriginal)
     {
         TTF_CloseFont(fuenteHudLocal);
         fuenteHudLocal = NULL;
@@ -961,7 +976,7 @@ int realizarMovimiento(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas
         default: return MOV_INVALIDO;
     }
 
-    if(nuevaFila < 0 || nuevaFila >= laberinto->filas 
+    if(nuevaFila < 0 || nuevaFila >= laberinto->filas
         || nuevaColumna < 0 || nuevaColumna >= laberinto->columnas)
         return MOV_INVALIDO;
 
@@ -1011,10 +1026,10 @@ int pantallaInicio(SDL_Window *ventana, SDL_Renderer *renderer, TTF_Font *fuente
 
     /* Calcular escala de texto basada en el viewport actual (relacion ventana/logico) */
     SDL_RenderGetViewport(renderer, &vp);
-    if (vp.w > 0 && ancho > 0) 
+    if (vp.w > 0 && ancho > 0)
     {
         escalaTexto = (float)vp.w / (float)ancho;
-        if (escalaTexto <= 0.0f) 
+        if (escalaTexto <= 0.0f)
             escalaTexto = 1.0f;
     }
 
@@ -1023,11 +1038,11 @@ int pantallaInicio(SDL_Window *ventana, SDL_Renderer *renderer, TTF_Font *fuente
 
     centrarRenderizado(renderer, fuente, "LABERINTOS Y FANTASMAS", COLOR_AMARILLO, ancho, y, escalaTexto);
     y += 2 * salto;
-    
+
     centrarRenderizado(renderer, fuente, "CONTROLES:", COLOR_BLANCO, ancho, y, escalaTexto);
     y += salto;
-    centrarRenderizado(renderer, fuente, "WASD - Moverse", COLOR_BLANCO, ancho, y, escalaTexto);   
-    y += salto;   
+    centrarRenderizado(renderer, fuente, "WASD - Moverse", COLOR_BLANCO, ancho, y, escalaTexto);
+    y += salto;
     centrarRenderizado(renderer, fuente, "ESC - Salir", COLOR_BLANCO, ancho, y, escalaTexto);
     y += 2 * salto;
 
@@ -1076,10 +1091,10 @@ void victoria(SDL_Window *ventana, SDL_Renderer *renderer, TTF_Font *fuente, int
     float escalaTexto = 1.0f;
 
     SDL_RenderGetViewport(renderer, &vp);
-    if (vp.w > 0 && ancho > 0) 
+    if (vp.w > 0 && ancho > 0)
     {
         escalaTexto = (float)vp.w / (float)ancho;
-        if (escalaTexto <= 0.0f) 
+        if (escalaTexto <= 0.0f)
             escalaTexto = 1.0f;
     }
 
@@ -1114,10 +1129,10 @@ void derrota(SDL_Window *ventana, SDL_Renderer *renderer, TTF_Font *fuente, int 
     float escalaTexto = 1.0f;
 
     SDL_RenderGetViewport(renderer, &vp);
-    if (vp.w > 0 && ancho > 0) 
+    if (vp.w > 0 && ancho > 0)
     {
         escalaTexto = (float)vp.w / (float)ancho;
-        if (escalaTexto <= 0.0f) 
+        if (escalaTexto <= 0.0f)
             escalaTexto = 1.0f;
     }
 
