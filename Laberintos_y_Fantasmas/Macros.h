@@ -36,8 +36,6 @@
 #define MAX_COLUMNAS 50 //Podria ser bastante mas, pero seria una fea relacion filas/columnas
 #define MIN_PUNTOS 10
 #define MAX_PUNTOS 50
-#define DISTANCIA_MINIMA_ENTRADA_SALIDA 3
-#define DISTANCIA_MINIMA_ENTRE_OBJETOS 2
 
 #define MOV_INVALIDO 0
 #define MOV_VALIDO 1
@@ -54,6 +52,8 @@
 #define ERROR_ARCH 0
 #define ERROR_SDL 0
 #define ERROR_CONFIG 0
+#define ERROR_MEMORIA 0
+#define ERROR_GENERACION 0
 #define TODO_BIEN 1
 
 #define COLOR_BLANCO (SDL_Color){255, 255, 255, 255}
@@ -61,6 +61,10 @@
 #define COLOR_AZUL (SDL_Color){0, 0, 255, 255}
 #define COLOR_AMARILLO (SDL_Color){255, 255, 0, 255}
 #define COLOR_GRIS (SDL_Color){128, 128, 128, 255}
+
+#define DISTANCIA(X1, Y1, X2, Y2) (abs(X1 - X2) + abs(Y1 - Y2))
+#define DISTANCIA_MINIMA_ENTRADA_SALIDA 3
+#define DISTANCIA_MINIMA_ENTRE_OBJETOS 2
 
 typedef struct sNodo{
     void *dato;
@@ -109,5 +113,9 @@ typedef struct{
     long offset;
 }Indice;
 
+typedef struct{
+    int x,
+        y;
+}NodoPos;
 
 #endif // MACROS_H_INCLUDED
