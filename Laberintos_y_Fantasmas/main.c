@@ -30,7 +30,7 @@ void agujerearLaberinto(Tablero laberinto);
 void mezclarDirecciones(int dir[4][2]);
 void generarSalida(Tablero *laberinto);
 int guardarLaberinto(Tablero *laberinto);
-void cargarLaberinto(Tablero *laberinto, Fantasma *fantasmas, Configuracion config);
+void cargarLaberinto(Tablero *laberinto, Fantasma *fantasmas, Jugador *jugador, Configuracion config);
 void dibujarTablero(SDL_Renderer *renderer, Tablero *laberinto, Jugador *j, TTF_Font *fuente, int tamCelda, int offsetX, float escalaTexto);
 
 //FANTASMAS//
@@ -79,18 +79,17 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    //TABLERO//
-    //Aca se carga el contenido del laberinto: paredes, caminos, salida, fantasmas, premios y vidas extra
-    laberinto.filas = config.filas;
-    laberinto.columnas = config.columnas;
-    cargarLaberinto(&laberinto, fantasmas, config);
-
     //JUGADOR//
     jugador.vidas = config.vidasIniciales;
     jugador.posY = 1;
     jugador.posX = 0;
     jugador.puntaje = 0;
-    laberinto.celdas[jugador.posY][jugador.posX] = 'J';
+
+    //TABLERO//
+    //Aca se carga el contenido del laberinto: paredes, caminos, salida, fantasmas, premios y vidas extra
+    laberinto.filas = config.filas;
+    laberinto.columnas = config.columnas;
+    cargarLaberinto(&laberinto, fantasmas, &jugador, config);
 
     //Aca se guarda la disposicion inicial del laberinto en un archivo de texto
     guardarLaberinto(&laberinto);
@@ -423,7 +422,7 @@ void destruirSDL(SDL_Window **ventana, SDL_Renderer **renderer,
 
 
 //FUNCIONES DE TABLERO//
-void cargarLaberinto(Tablero *laberinto, Fantasma *fantasmas, Configuracion config)
+void cargarLaberinto(Tablero *laberinto, Fantasma *fantasmas, Jugador *jugador, Configuracion config)
 {
     laberinto->celdas = (char **)crear_matriz(laberinto->filas, laberinto->columnas, sizeof(char));
     inicializarTablero(*laberinto);
@@ -433,6 +432,7 @@ void cargarLaberinto(Tablero *laberinto, Fantasma *fantasmas, Configuracion conf
     agujerearLaberinto(*laberinto);
     laberinto->celdas[1][0] = 'E';
     generarSalida(laberinto);
+    laberinto.celdas[jugador->posY][jugador->posX] = 'J';
 
     generarFantasmas(laberinto, fantasmas, config.maxFantasmas);
     colocarVidasExtra(laberinto, config.maxVidasExtra);
@@ -645,21 +645,16 @@ void generarFantasmas(Tablero *laberinto, Fantasma *fantasmas, int maxFantasmas)
 {
     int f, x, y;
 
-    for(f = 0; f < maxFantasmas; f++)
+    for (f = 0; f < maxFantasmas; f++)
     {
-        do{
+        do {
             y = rand() % laberinto->filas;
             x = rand() % laberinto->columnas;
-        }while (laberinto->celdas[y][x] != ' ');
+        } while (laberinto->celdas[y][x] != ' ');
 
-        if(laberinto->celdas[y][x] == 'E' || laberinto->celdas[y][x] == 'S')
-            f--;
-        else
-        {
-            fantasmas[f].posY = y;
-            fantasmas[f].posX = x;
-            fantasmas[f].vivo = 1;
-        }
+        fantasmas[f].posY = y;
+        fantasmas[f].posX = x;
+        fantasmas[f].vivo = 1;
 
         laberinto->celdas[y][x] = 'F';
         fantasmas[f].quePisa = ' ';
@@ -724,6 +719,7 @@ int moverFantasmas(Tablero *laberinto, Fantasma *fantasmas, Jugador *jugador, in
                     jugador->vidas--;
                     if(jugador->vidas <= 0)
                         return DERROTA;
+
                     fantasmas[I].vivo = 0;
                     laberinto->celdas[nuevoY][nuevoX] = 'J';
                 }
@@ -760,8 +756,7 @@ void colocarVidasExtra(Tablero *laberinto, int vidasExtra)
         y = rand() % laberinto->filas;
         x = rand() % laberinto->columnas;
 
-        if(laberinto->celdas[y][x] == ' ' && laberinto->celdas[y][x] != 'E' && laberinto->celdas[y][x] != 'S'
-            && laberinto->celdas[y][x] != 'F' && laberinto->celdas[y][x] != 'J')
+        if(laberinto->celdas[y][x] == ' ')
         {
             laberinto->celdas[y][x] = 'V';
             colocadas++;
@@ -778,9 +773,7 @@ void colocarPremios(Tablero *laberinto, int maxPremios)
         y = rand() % laberinto->filas;
         x = rand() % laberinto->columnas;
 
-        if(laberinto->celdas[y][x] == ' ' && laberinto->celdas[y][x] != 'E'
-            && laberinto->celdas[y][x] != 'S' && laberinto->celdas[y][x] != 'F'
-            && laberinto->celdas[y][x] != 'J' && laberinto->celdas[y][x] != 'V')
+        if(laberinto->celdas[y][x] == ' ')
         {
             laberinto->celdas[y][x] = 'P';
             colocados++;
