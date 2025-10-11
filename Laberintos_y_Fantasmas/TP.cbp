@@ -40,6 +40,10 @@
 			<Add directory="SDL2/lib" />
 		</Linker>
 		<Unit filename="Macros.h" />
+		<Unit filename="cola.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="cola.h" />
 		<Unit filename="lista.c">
 			<Option compilerVar="CC" />
 		</Unit>
