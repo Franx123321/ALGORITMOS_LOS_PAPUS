@@ -28,7 +28,8 @@
 #endif
 
 #define RESERVAR_MEM(X,Y,Z,W) (((X) = (typeof(X)) malloc(Y)) == NULL ||((Z) = malloc(W)) == NULL ? free(X), 0 : 1 )
-#define MIN(X,Y) ((X < Y) ? X : Y)
+#define MAX(X,Y) ((X)>(Y)?(X):(Y))
+#define MIN(X,Y) ((X)<(Y)?(X):(Y))
 
 #define MIN_FILAS 15
 #define MIN_COLUMNAS 15
@@ -108,6 +109,17 @@ typedef struct{
     int clave;
     long offset;
 }Indice;
+
+typedef struct {
+    SDL_Window *ventana;
+    SDL_Renderer *renderer;
+    TTF_Font *fuente;
+    TTF_Font *fuenteHud;
+    int ancho;
+    int alto;
+    int tamFuente;
+    int tamFuenteHud;
+} ContextoSDL;
 
 
 #endif // MACROS_H_INCLUDED
