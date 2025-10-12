@@ -1076,7 +1076,9 @@ int pantallaInicio(ContextoSDL *sdl, TTF_Font *fuente)
 int pantallaIngresarNombre(ContextoSDL *sdl, TTF_Font *fuente, Jugador *jugador)
 {
     SDL_Event evento;
-    int continuar = 0, actualizar = 0,
+    int continuar = 0,
+        actualizar = 0,
+        noNombre = 0,
         y = 120,
         salto = 40,
         ancho = sdl->ancho,
@@ -1117,8 +1119,14 @@ int pantallaIngresarNombre(ContextoSDL *sdl, TTF_Font *fuente, Jugador *jugador)
                 return SALIR;
             if(evento.type == SDL_KEYDOWN)
             {
-                if(evento.key.keysym.sym == SDLK_RETURN)
-                    continuar = 1;
+                if(evento.key.keysym.sym == SDLK_RETURN) {
+                    if (*nombre)
+                        continuar = 1;
+                    else {
+                        noNombre = 1;
+                        actualizar = 1;
+                    }
+                }
                 else if(evento.key.keysym.sym == SDLK_ESCAPE)
                     return SALIR;
                 else if(evento.key.keysym.sym == SDLK_BACKSPACE) {
@@ -1128,6 +1136,7 @@ int pantallaIngresarNombre(ContextoSDL *sdl, TTF_Font *fuente, Jugador *jugador)
             }
             if (evento.type == SDL_TEXTINPUT) {
                 strncat(nombre, evento.text.text, 50 - strlen(nombre));
+                noNombre = 0;
                 actualizar = 1;
             }
         }
@@ -1146,6 +1155,12 @@ int pantallaIngresarNombre(ContextoSDL *sdl, TTF_Font *fuente, Jugador *jugador)
 
             if (*nombre) {
                 renderizarCentrado(sdl->renderer, fuente, nombre, COLOR_BLANCO, ancho, y, escalaTexto);
+            }
+
+            y += salto;
+
+            if (noNombre) {
+                renderizarCentrado(sdl->renderer, fuente, "Primero ingrese su nombre", COLOR_AMARILLO, ancho, y, escalaTexto);
             }
 
             y += 2 * salto;
