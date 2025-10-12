@@ -43,6 +43,7 @@ void Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFan
             ContextoSDL *sdl, tCola *ColaMovimientos);
 int realizarMovimiento(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFantasmas, char direccion);
 int pantallaInicio(ContextoSDL *sdl, TTF_Font *fuente);
+int pantallaIngresarNombre(ContextoSDL *sdl, TTF_Font *fuente, Jugador *jugador);
 void victoria(ContextoSDL *sdl, TTF_Font *fuente, int puntaje);
 void derrota(ContextoSDL *sdl, TTF_Font *fuente);
 
@@ -805,6 +806,9 @@ void Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFan
     if(pantallaInicio(sdl, fuenteHudOriginal) == SALIR)
         return;
 
+    if(pantallaIngresarNombre(sdl, fuenteHudOriginal, jugador) == SALIR)
+        return;
+
     while(jugando && estado != VICTORIA)
     {
         while(SDL_PollEvent(&evento))
@@ -1041,7 +1045,7 @@ int pantallaInicio(ContextoSDL *sdl, TTF_Font *fuente)
     y += salto;
     renderizarCentrado(sdl->renderer, fuente, "Recoge vidas extra (violeta) para sobrevivir mas tiempo.", COLOR_BLANCO, ancho, y, escalaTexto);
     y += 2 * salto;
-    renderizarCentrado(sdl->renderer, fuente, "Presiona ENTER para comenzar...", COLOR_GRIS, ancho, alto - 80, escalaTexto);
+    renderizarCentrado(sdl->renderer, fuente, "Presiona ENTER para continuar...", COLOR_GRIS, ancho, alto - 80, escalaTexto);
 
     SDL_RenderPresent(sdl->renderer);
 
@@ -1061,6 +1065,101 @@ int pantallaInicio(ContextoSDL *sdl, TTF_Font *fuente)
         }
         SDL_Delay(10);
     }
+
+    SDL_SetRenderDrawColor(sdl->renderer, 0, 0, 0, 255);
+    SDL_RenderClear(sdl->renderer);
+    SDL_RenderPresent(sdl->renderer);
+
+    return TODO_BIEN;
+}
+
+int pantallaIngresarNombre(ContextoSDL *sdl, TTF_Font *fuente, Jugador *jugador)
+{
+    SDL_Event evento;
+    int continuar = 0, actualizar = 0,
+        y = 120,
+        salto = 40,
+        ancho = sdl->ancho,
+        alto = sdl->alto;
+    SDL_Rect vp;
+    float escalaTexto = 1.0f;
+
+    char nombre[50];
+    *nombre = '\0';
+
+    /* Calcular escala de texto basada en el viewport actual (relacion ventana/logico) */
+    SDL_RenderGetViewport(sdl->renderer, &vp);
+
+    if (vp.w > 0 && ancho > 0)
+    {
+        escalaTexto = (float)vp.w / (float)ancho;
+        if (escalaTexto <= 0.0f)
+            escalaTexto = 1.0f;
+    }
+
+    SDL_SetRenderDrawColor(sdl->renderer, 0, 0, 80, 255);
+    SDL_RenderClear(sdl->renderer);
+
+    renderizarCentrado(sdl->renderer, fuente, "LABERINTOS Y FANTASMAS", COLOR_AMARILLO, ancho, y, escalaTexto);
+    y += 2 * salto;
+
+    renderizarCentrado(sdl->renderer, fuente, "Ingrese su nombre:", COLOR_BLANCO, ancho, y, escalaTexto);
+    y += 2 * salto;
+    renderizarCentrado(sdl->renderer, fuente, "Presiona ENTER para comenzar...", COLOR_GRIS, ancho, alto - 80, escalaTexto);
+
+    SDL_RenderPresent(sdl->renderer);
+
+    while(!continuar)
+    {
+        while(SDL_PollEvent(&evento))
+        {
+            if(evento.type == SDL_QUIT)
+                return SALIR;
+            if(evento.type == SDL_KEYDOWN)
+            {
+                if(evento.key.keysym.sym == SDLK_RETURN)
+                    continuar = 1;
+                else if(evento.key.keysym.sym == SDLK_ESCAPE)
+                    return SALIR;
+                else if(evento.key.keysym.sym == SDLK_BACKSPACE) {
+                    *(nombre + MAX(0, strlen(nombre) - 1)) = '\0';
+                    actualizar = 1;
+                }
+            }
+            if (evento.type == SDL_TEXTINPUT) {
+                strncat(nombre, evento.text.text, 50 - strlen(nombre));
+                actualizar = 1;
+            }
+        }
+
+        y = 120;
+
+        if (actualizar) {
+            SDL_SetRenderDrawColor(sdl->renderer, 0, 0, 80, 255);
+            SDL_RenderClear(sdl->renderer);
+
+            renderizarCentrado(sdl->renderer, fuente, "LABERINTOS Y FANTASMAS", COLOR_AMARILLO, ancho, y, escalaTexto);
+            y += 2 * salto;
+
+            renderizarCentrado(sdl->renderer, fuente, "Ingrese su nombre:", COLOR_BLANCO, ancho, y, escalaTexto);
+            y += salto;
+
+            if (*nombre) {
+                renderizarCentrado(sdl->renderer, fuente, nombre, COLOR_BLANCO, ancho, y, escalaTexto);
+            }
+
+            y += 2 * salto;
+            renderizarCentrado(sdl->renderer, fuente, "Presiona ENTER para comenzar...", COLOR_GRIS, ancho, alto - 80, escalaTexto);
+
+            SDL_RenderPresent(sdl->renderer);
+
+            actualizar = 0;
+        }
+
+        SDL_Delay(10);
+    }
+
+    strcpy(jugador->nombre, nombre);
 
     SDL_SetRenderDrawColor(sdl->renderer, 0, 0, 0, 255);
     SDL_RenderClear(sdl->renderer);
