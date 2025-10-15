@@ -1299,7 +1299,16 @@ int pantallaIngresarNombre(ContextoSDL *sdl, TTF_Font *fuente, Jugador *jugador)
                 SDL_RenderCopy(sdl->renderer, texturaTexto, NULL, &recta);
                 SDL_FreeSurface(supTexto);
                 SDL_DestroyTexture(texturaTexto);
+
+                // Cursor de texto
+                SDL_SetRenderDrawColor(sdl->renderer, 255, 255, 255, 255);
+                SDL_RenderDrawLine(sdl->renderer, recta.x + recta.w, recta.y, recta.x + recta.w, recta.y + recta.h);
             }
+            else {
+                SDL_SetRenderDrawColor(sdl->renderer, 255, 255, 255, 255);
+                SDL_RenderDrawLine(sdl->renderer, ancho / 2, alto / 15 * 7, ancho / 2, alto / 15 * 7 + rectaTitulo.h);
+            }
+
 
             if (noNombre) {
                 renderizarCentrado(sdl->renderer, sdl->fuente, advertencia, COLOR_AMARILLO, ancho, alto / 5 * 7, 1);
@@ -1406,6 +1415,9 @@ int pantallaIngresarNombre(ContextoSDL *sdl, TTF_Font *fuente, Jugador *jugador)
     }
 
     strcpy(jugador->nombre, nombre);
+
+    SDL_DestroyTexture(texTitulo);
+    SDL_DestroyTexture(texDescripcion);
 
     return op; // 1 = seguir, SALIR (0) = salir
 }
