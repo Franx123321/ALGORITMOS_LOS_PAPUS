@@ -40,10 +40,10 @@ int colocarPremios(Tablero *laberinto, int maxPremios);
 
 //PARTIDA//
 int menu(SDL_Renderer *renderer, TTF_Font *fuente, int ancho, int alto);
+int pantallaIngresarNombre(ContextoSDL *sdl, TTF_Font *fuente, Jugador *jugador);
 int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFantasmas,
             ContextoSDL *sdl, tCola *ColaMovimientos);
 int realizarMovimiento(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFantasmas, char direccion);
-int pantallaIngresarNombre(ContextoSDL *sdl, TTF_Font *fuente, Jugador *jugador);
 void victoria(ContextoSDL *sdl, TTF_Font *fuente, int puntaje);
 void derrota(ContextoSDL *sdl, TTF_Font *fuente);
 
@@ -122,14 +122,17 @@ int main()
     }
     else if(opMenu == 1)
     {
-        if(Jugar(&laberinto, &jugador, fantasmas, config.maxFantasmas, &sdl, &ColaMovimientos) != TODO_BIEN)
+        if (pantallaIngresarNombre(&sdl, sdl.fuente, &jugador) != SALIR)
         {
-            printf("\nSe produjo un error durante el juego.");
-            vaciarCola(&ColaMovimientos);
-            destruir_matriz((void **)laberinto.celdas, laberinto.filas);
-            destruirSDL(&sdl);
-            free(fantasmas);
-            exit(1);
+            if(Jugar(&laberinto, &jugador, fantasmas, config.maxFantasmas, &sdl, &ColaMovimientos) != TODO_BIEN)
+            {
+                printf("\nSe produjo un error durante el juego.");
+                vaciarCola(&ColaMovimientos);
+                destruir_matriz((void **)laberinto.celdas, laberinto.filas);
+                destruirSDL(&sdl);
+                free(fantasmas);
+                exit(1);
+            }
         }
     }
 
@@ -807,9 +810,11 @@ void dibujarTablero(SDL_Renderer *renderer, Tablero *laberinto, Jugador *j, TTF_
     }
 
     sprintf(mensajeHUD, "Vidas: %d", j->vidas);
-    renderizarHUD(renderer, fuente, mensajeHUD, COLOR_AZUL, 2, 3, escalaTexto);
+    renderizarHUD(renderer, fuente, mensajeHUD, COLOR_AZUL, 10, 3, escalaTexto);
     sprintf(mensajeHUD, "Puntaje: %d", j->puntaje);
-    renderizarHUD(renderer, fuente, mensajeHUD, COLOR_AZUL, 200, 3, escalaTexto);
+    renderizarHUD(renderer, fuente, mensajeHUD, COLOR_AZUL, 198, 3, escalaTexto);
+    sprintf(mensajeHUD, "Jugador: %s", j->nombre);
+    renderizarHUD(renderer, fuente, mensajeHUD, COLOR_AZUL, 423, 3, escalaTexto);
 }
 
 
@@ -1179,7 +1184,6 @@ int menu(SDL_Renderer *renderer, TTF_Font *fuente, int ancho, int alto)
             SDL_DestroyTexture(texturaTexto);
 
             rectaOpciones[I] = recta;
-
         }
 
         SDL_RenderPresent(renderer);
@@ -1231,6 +1235,181 @@ int menu(SDL_Renderer *renderer, TTF_Font *fuente, int ancho, int alto)
     return op;
 }
 
+int pantallaIngresarNombre(ContextoSDL *sdl, TTF_Font *fuente, Jugador *jugador)
+{
+    SDL_Event evento;
+    int op, ejecutando = 1, actualizar = 1, I, x, y, hover = -1, prevHover = -1,
+        noNombre = 0, ancho = sdl->ancho, alto = sdl->alto;
+    const char *titulo = "LABERINTOS Y FANTASMAS",
+               *descripcion = "Ingrese su nombre",
+               *advertencia = "El nombre esta vacio",
+               *iniciar = "INICIAR";
+    SDL_Surface *supTexto;
+    SDL_Texture *texTitulo, *texDescripcion, *texturaTexto;
+    SDL_Rect recta, rectaTitulo, rectaDesc, rectaBoton;
+    SDL_Color color;
+
+    char nombre[50];
+    *nombre = '\0';
+
+    // Titulo
+    supTexto = TTF_RenderText_Blended(fuente, titulo, COLOR_ROJO);
+    texTitulo = SDL_CreateTextureFromSurface(sdl->renderer, supTexto);
+
+    rectaTitulo.x = ancho / 2 - supTexto->w / 2;
+    rectaTitulo.y = alto / 5;
+    rectaTitulo.w = supTexto->w;
+    rectaTitulo.h = supTexto->h;
+
+    SDL_FreeSurface(supTexto);
+
+    // Descripcion
+    supTexto = TTF_RenderText_Blended(fuente, descripcion, COLOR_BLANCO);
+    texDescripcion = SDL_CreateTextureFromSurface(sdl->renderer, supTexto);
+
+    rectaDesc.x = ancho / 2 - supTexto->w / 2;
+    rectaDesc.y = alto / 15 * 5;
+    rectaDesc.w = supTexto->w;
+    rectaDesc.h = supTexto->h;
+
+    SDL_FreeSurface(supTexto);
+
+    while(ejecutando)
+    {
+        if (actualizar)
+        {
+            SDL_SetRenderDrawColor(sdl->renderer, 0, 0, 0, 255);
+            SDL_RenderClear(sdl->renderer);
+
+            // Titulo
+            SDL_RenderCopy(sdl->renderer, texTitulo, NULL, &rectaTitulo);
+
+            // Ingrese su nombre
+            SDL_RenderCopy(sdl->renderer, texDescripcion, NULL, &rectaDesc);
+
+            if (*nombre) {
+                supTexto = TTF_RenderText_Blended(fuente, nombre, COLOR_BLANCO);
+                texturaTexto = SDL_CreateTextureFromSurface(sdl->renderer, supTexto);
+
+                recta.x = ancho / 2 - supTexto->w / 2;
+                recta.y = alto / 15 * 7;
+                recta.w = supTexto->w;
+                recta.h = supTexto->h;
+
+                SDL_RenderCopy(sdl->renderer, texturaTexto, NULL, &recta);
+                SDL_FreeSurface(supTexto);
+                SDL_DestroyTexture(texturaTexto);
+            }
+
+            if (noNombre) {
+                renderizarCentrado(sdl->renderer, sdl->fuente, advertencia, COLOR_AMARILLO, ancho, alto / 5 * 7, 1);
+            }
+
+            // Boton Iniciar
+            color = (I == hover) ? COLOR_AMARILLO : COLOR_BLANCO;
+            supTexto = TTF_RenderText_Blended(fuente, iniciar, color);
+            texturaTexto = SDL_CreateTextureFromSurface(sdl->renderer, supTexto);
+
+            recta.x = ancho / 2 - supTexto->w / 2;
+            recta.y = alto - (supTexto->h + 80);
+            recta.w = supTexto->w;
+            recta.h = supTexto->h;
+
+            SDL_RenderCopy(sdl->renderer, texturaTexto, NULL, &recta);
+            SDL_FreeSurface(supTexto);
+            SDL_DestroyTexture(texturaTexto);
+
+            rectaBoton = recta;
+            actualizar = 0;
+
+            SDL_RenderPresent(sdl->renderer);
+        }
+
+        // Revisar eventos
+        while(SDL_PollEvent(&evento))
+        {
+            if(evento.type == SDL_QUIT)
+            {
+                op = SALIR;
+                ejecutando = 0;
+            }
+            else if(evento.type == SDL_MOUSEMOTION)
+            {
+                x = evento.motion.x;
+                y = evento.motion.y;
+
+                prevHover = hover;
+                hover = -1;
+
+                if (x >= rectaBoton.x && x <= rectaBoton.x + rectaBoton.w &&
+                    y >= rectaBoton.y && y <= rectaBoton.y + rectaBoton.h)
+                {
+                    hover = I;
+                }
+
+                if (hover != prevHover)
+                    actualizar = 1;
+            }
+            else if(evento.type == SDL_MOUSEBUTTONDOWN && evento.button.button == SDL_BUTTON_LEFT)
+            {
+                x = evento.button.x;
+                y = evento.button.y;
+
+                if (x >= rectaBoton.x && x <= rectaBoton.x + rectaBoton.w &&
+                    y >= rectaBoton.y && y <= rectaBoton.y + rectaBoton.h)
+                {
+                    if (*nombre)
+                    {
+                        op = 1;
+                        ejecutando = 0;
+                    }
+                    else {
+                        noNombre = 1;
+                        actualizar = 1;
+                    }
+                }
+            }
+            else if(evento.type == SDL_KEYDOWN)
+            {
+                if(evento.key.keysym.sym == SDLK_RETURN)
+                {
+                    if (*nombre)
+                    {
+                        op = 1;
+                        ejecutando = 0;
+                    }
+                    else {
+                        noNombre = 1;
+                        actualizar = 1;
+                    }
+                }
+                else if(evento.key.keysym.sym == SDLK_ESCAPE)
+                {
+                    op = SALIR;
+                    ejecutando = 0;
+                }
+                else if(evento.key.keysym.sym == SDLK_BACKSPACE)
+                {
+                    *(nombre + MAX(0, strlen(nombre) - 1)) = '\0';
+                    actualizar = 1;
+                }
+            }
+            else if (evento.type == SDL_TEXTINPUT)
+            {
+                strncat(nombre, evento.text.text, 50 - strlen(nombre));
+                noNombre = 0;
+                actualizar = 1;
+            }
+        }
+
+        SDL_Delay(16);
+    }
+
+    strcpy(jugador->nombre, nombre);
+
+    return op; // 1 = seguir, SALIR (0) = salir
+}
+
 int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFantasmas,
             ContextoSDL *sdl, tCola *ColaMovimientos)
 {
@@ -1260,9 +1439,6 @@ int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFant
         fuenteHudOriginal = sdl->fuenteHud;
     else
         fuenteHudOriginal = NULL;
-
-    if(pantallaIngresarNombre(sdl, fuenteHudOriginal, jugador) == SALIR)
-        return TODO_BIEN;
 
     while(jugando && estado != VICTORIA)
     {
@@ -1462,116 +1638,6 @@ int realizarMovimiento(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas
     laberinto->celdas[jugador->posY][jugador->posX] = 'J';
 
     return MOV_VALIDO;
-}
-
-int pantallaIngresarNombre(ContextoSDL *sdl, TTF_Font *fuente, Jugador *jugador)
-{
-    SDL_Event evento;
-    int continuar = 0,
-        actualizar = 0,
-        noNombre = 0,
-        y = 120,
-        salto = 40,
-        ancho = sdl->ancho,
-        alto = sdl->alto;
-    SDL_Rect vp;
-    float escalaTexto = 1.0f;
-
-    char nombre[50];
-    *nombre = '\0';
-
-    /* Calcular escala de texto basada en el viewport actual (relacion ventana/logico) */
-    SDL_RenderGetViewport(sdl->renderer, &vp);
-
-    if (vp.w > 0 && ancho > 0)
-    {
-        escalaTexto = (float)vp.w / (float)ancho;
-        if (escalaTexto <= 0.0f)
-            escalaTexto = 1.0f;
-    }
-
-    SDL_SetRenderDrawColor(sdl->renderer, 0, 0, 80, 255);
-    SDL_RenderClear(sdl->renderer);
-
-    renderizarCentrado(sdl->renderer, fuente, "LABERINTOS Y FANTASMAS", COLOR_AMARILLO, ancho, y, escalaTexto);
-    y += 2 * salto;
-
-    renderizarCentrado(sdl->renderer, fuente, "Ingrese su nombre:", COLOR_BLANCO, ancho, y, escalaTexto);
-    y += 2 * salto;
-    renderizarCentrado(sdl->renderer, fuente, "Presiona ENTER para comenzar...", COLOR_GRIS, ancho, alto - 80, escalaTexto);
-
-    SDL_RenderPresent(sdl->renderer);
-
-    while(!continuar)
-    {
-        while(SDL_PollEvent(&evento))
-        {
-            if(evento.type == SDL_QUIT)
-                return SALIR;
-            if(evento.type == SDL_KEYDOWN)
-            {
-                if(evento.key.keysym.sym == SDLK_RETURN) {
-                    if (*nombre)
-                        continuar = 1;
-                    else {
-                        noNombre = 1;
-                        actualizar = 1;
-                    }
-                }
-                else if(evento.key.keysym.sym == SDLK_ESCAPE)
-                    return SALIR;
-                else if(evento.key.keysym.sym == SDLK_BACKSPACE) {
-                    *(nombre + MAX(0, strlen(nombre) - 1)) = '\0';
-                    actualizar = 1;
-                }
-            }
-            if (evento.type == SDL_TEXTINPUT) {
-                strncat(nombre, evento.text.text, 50 - strlen(nombre));
-                noNombre = 0;
-                actualizar = 1;
-            }
-        }
-
-        y = 120;
-
-        if (actualizar) {
-            SDL_SetRenderDrawColor(sdl->renderer, 0, 0, 80, 255);
-            SDL_RenderClear(sdl->renderer);
-
-            renderizarCentrado(sdl->renderer, fuente, "LABERINTOS Y FANTASMAS", COLOR_AMARILLO, ancho, y, escalaTexto);
-            y += 2 * salto;
-
-            renderizarCentrado(sdl->renderer, fuente, "Ingrese su nombre:", COLOR_BLANCO, ancho, y, escalaTexto);
-            y += salto;
-
-            if (*nombre) {
-                renderizarCentrado(sdl->renderer, fuente, nombre, COLOR_BLANCO, ancho, y, escalaTexto);
-            }
-
-            y += salto;
-
-            if (noNombre) {
-                renderizarCentrado(sdl->renderer, fuente, "Primero ingrese su nombre", COLOR_AMARILLO, ancho, y, escalaTexto);
-            }
-
-            y += 2 * salto;
-            renderizarCentrado(sdl->renderer, fuente, "Presiona ENTER para comenzar...", COLOR_GRIS, ancho, alto - 80, escalaTexto);
-
-            SDL_RenderPresent(sdl->renderer);
-
-            actualizar = 0;
-        }
-
-        SDL_Delay(10);
-    }
-
-    strcpy(jugador->nombre, nombre);
-
-    SDL_SetRenderDrawColor(sdl->renderer, 0, 0, 0, 255);
-    SDL_RenderClear(sdl->renderer);
-    SDL_RenderPresent(sdl->renderer);
-
-    return TODO_BIEN;
 }
 
 void victoria(ContextoSDL *sdl, TTF_Font *fuente, int puntaje)
