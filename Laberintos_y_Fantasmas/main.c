@@ -769,7 +769,7 @@ void dibujarTablero(SDL_Renderer *renderer, Tablero *laberinto, Jugador *j, TTF_
                     int tamCeldaReal, int offsetX, float escalaTexto)
 {
     int I, J;
-    char celda, mensajeHUD[50];
+    char celda, mensajeHUD[100];
     SDL_Rect recta;
 
     if(!laberinto || !laberinto->celdas || !renderer || !fuente)
