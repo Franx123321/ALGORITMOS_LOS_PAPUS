@@ -1,18 +1,7 @@
 #ifndef LISTA_H_INCLUDED
 #define LISTA_H_INCLUDED
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
-
-#define minimo( X , Y ) ( ( X ) <= ( Y ) ? ( X ) : ( Y ) )
-
-typedef struct sNodo{
-    void *dato;
-    unsigned tamDato;
-    struct sNodo *sig;
-}tNodo;
+#include "Macros.h"
 
 typedef tNodo *tLista;
 

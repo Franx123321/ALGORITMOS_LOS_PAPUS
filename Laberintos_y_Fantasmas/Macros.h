@@ -27,7 +27,6 @@
     #include <unistd.h>
 #endif
 
-#define RESERVAR_MEM(X,Y,Z,W) (((X) = (typeof(X)) malloc(Y)) == NULL ||((Z) = malloc(W)) == NULL ? free(X), 0 : 1 )
 #define MAX(X,Y) ((X)>(Y)?(X):(Y))
 #define MIN(X,Y) ((X)<(Y)?(X):(Y))
 
@@ -66,18 +65,6 @@
 #define DISTANCIA(X1, Y1, X2, Y2) (abs(X1 - X2) + abs(Y1 - Y2))
 #define DISTANCIA_MINIMA_ENTRADA_SALIDA 3
 #define DISTANCIA_MINIMA_ENTRE_OBJETOS 2
-
-typedef struct sNodo{
-    void *dato;
-    unsigned tamDato;
-    struct sNodo *sig;
-}tNodo;
-
-typedef struct sNodoArbol{
-    void *dato;
-    unsigned tamDato;
-    struct sNodoArbol *izq, *der;
-}tNodoArbol;
 
 typedef struct{
     char nombre[50];
@@ -129,5 +116,19 @@ typedef struct{
     int x,
         y;
 }NodoPos;
+
+
+//ESTRUCTURAS DE DATOS//
+typedef struct sNodo{
+    void *dato;
+    unsigned tamDato;
+    struct sNodo *sig;
+}tNodo;
+
+typedef struct sNodoArbol{
+    void *dato;
+    unsigned tamDato;
+    struct sNodoArbol *izq, *der;
+}tNodoArbol;
 
 #endif // MACROS_H_INCLUDED

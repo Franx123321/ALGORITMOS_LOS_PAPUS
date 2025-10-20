@@ -47,7 +47,7 @@ int sacarPrimeroLista(tLista *l, void *d, unsigned tamDato)
     if(aux == NULL)
         return 0;
     *l = aux->sig;
-    memcpy(d, aux->dato, minimo(tamDato, aux->tamDato));
+    memcpy(d, aux->dato, MIN(tamDato, aux->tamDato));
     free(aux->dato);
     free(aux);
     return 1;
@@ -57,7 +57,7 @@ int verPrimeroLista(const tLista *l, void *d, unsigned tamDato)
 {
     if(*l == NULL)
         return 0;
-    memcpy(d, (*l)->dato, minimo(tamDato, (*l)->tamDato));
+    memcpy(d, (*l)->dato, MIN(tamDato, (*l)->tamDato));
     return 1;
 }
 
@@ -88,7 +88,7 @@ int sacarUltimoLista(tLista *l, void *d, unsigned tamDato)
 
     while((*l)->sig)
         l = &(*l)->sig;
-    memcpy(d, (*l)->dato, minimo(tamDato, (*l)->tamDato));
+    memcpy(d, (*l)->dato, MIN(tamDato, (*l)->tamDato));
     free((*l)->dato);
     free(*l);
     *l = NULL;
@@ -101,7 +101,7 @@ int verUltimoLista(const tLista *l, void *d, unsigned tamDato)
         return 0;
     while((*l)->sig)
         l = &(*l)->sig;
-    memcpy(d, (*l)->dato, minimo(tamDato, (*l)->tamDato));
+    memcpy(d, (*l)->dato, MIN(tamDato, (*l)->tamDato));
     return 1;
 }
 
@@ -113,7 +113,7 @@ void recorrerLista(const tLista *l, unsigned tamDato, void (*accion)(const void 
 
     while(actual != NULL)
     {
-        min = minimo(tamDato, actual->tamDato);
+        min = MIN(tamDato, actual->tamDato);
         temp = malloc(min);
         if(temp != NULL)
         {
