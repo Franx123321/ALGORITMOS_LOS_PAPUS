@@ -18,10 +18,15 @@ int main()
     Fantasma *fantasmas;
     ContextoSDL sdl;
     tCola ColaMovimientos;
-    int opMenu;
+    WSADATA wsaData;
+    SOCKET sock; //No le puedo llamar socket porque asi se llama la funcion
+    struct sockaddr_in dirServidor;
+    char buffer[256];
+    int opMenu, bytesLeidos;
 
     srand(time(NULL));
 
+    //CONFIGURACION//
     if(leerConfig(&config) == 0)
     {
         printf("\nERROR al leer el archivo de configuración.");
@@ -34,6 +39,53 @@ int main()
         printf("\nERROR al reservar memoria para los fantasmas.");
         exit(1);
     }
+
+    //CONEXION AL SERVER//
+    /* Explico algo: Si falla algo en la creacion de variables relacionadas con la conexion,
+       termino el programa, porque esto significaria que fallo algo en la memoria, prefiero
+       no arriesgarme a tener errores de memoria o codigo. El modo contingencia se activa solo
+       si falla la conexion, no si falla algo interno del propio juego */
+    if(WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
+    {
+        printf("\nERROR al inicializar Winsock.\n");
+        free(fantasmas);
+        exit(1);
+    }
+
+    sock = socket(AF_INET, SOCK_STREAM, 0);
+    if(sock == INVALID_SOCKET)
+    {
+        printf("\nERROR al crear socket.\n");
+        free(fantasmas);
+        WSACleanup();
+        exit(1);
+    }
+    
+    dirServidor.sin_family = AF_INET;
+    dirServidor.sin_port = htons(PUERTO);
+    inet_pton(AF_INET, "127.0.0.1", &dirServidor.sin_addr);
+
+    //Intento conectarme
+    if(connect(sock, (struct sockaddr*)&dirServidor, sizeof(dirServidor)) == SOCKET_ERROR)
+    {
+            printf("\nERROR al conectar al servidor,se jugara en modo contingencia.\n");
+            closesocket(sock);
+            WSACleanup();
+            free(fantasmas);
+            exit(1);
+    }
+    
+    printf("\nConectado con exito al servidor...\n");
+
+    bytesLeidos = recv(sock, buffer, sizeof(buffer) - 1, 0);
+    if(bytesLeidos > 0)
+    {
+        buffer[bytesLeidos] = '\0';
+        printf("\nServidor: %s\n", buffer);
+    }
+    else
+        printf("\nNo se recibio ningun mensaje del servidor.\n");
+
 
     //JUGADOR//
     jugador.vidas = config.vidasIniciales;
@@ -49,9 +101,11 @@ int main()
     if(cargarLaberinto(&laberinto, fantasmas, &jugador, config) != TODO_BIEN)
     {
         printf("\nError al cargar el laberinto.");
+        closesocket(sock);
+        WSACleanup();
         free(fantasmas);
         exit(1);
-    }
+    } 
 
     //Aca se guarda la disposicion inicial del laberinto en un archivo de texto
     guardarLaberinto(&laberinto);
@@ -59,6 +113,8 @@ int main()
     //SDL//
     if(inicializarSDL(&sdl, &config) != TODO_BIEN)
     {
+        closesocket(sock);
+        WSACleanup();
         free(fantasmas);
         destruir_matriz((void **)laberinto.celdas, laberinto.filas);
         exit(1);
@@ -68,43 +124,25 @@ int main()
     crearCola(&ColaMovimientos);
     opMenu = menu(sdl.renderer, sdl.fuente, sdl.ancho, sdl.alto);
     if(opMenu == 3)
-    {
         printf("\nSe selecciono salir");
-        destruir_matriz((void **)laberinto.celdas, laberinto.filas);
-        destruirSDL(&sdl);
-        free(fantasmas);
-        exit(1);
-    }
     else if(opMenu == 2) //TEMPORAL
-    {
         destruir_matriz((void **)laberinto.celdas, laberinto.filas);
-        destruirSDL(&sdl);
-        free(fantasmas);
-        exit(1);
-    }
     else if(opMenu == 1)
-    {
         if (pantallaIngresarNombre(&sdl, sdl.fuente, &jugador) != SALIR)
-        {
             if(Jugar(&laberinto, &jugador, fantasmas, config.maxFantasmas, &sdl, &ColaMovimientos) != TODO_BIEN)
-            {
                 printf("\nSe produjo un error durante el juego.");
-                vaciarCola(&ColaMovimientos);
-                destruir_matriz((void **)laberinto.celdas, laberinto.filas);
-                destruirSDL(&sdl);
-                free(fantasmas);
-                exit(1);
-            }
-        }
-    }
 
-    //DESTRUCTORES//
+    send(sock, "FIN", 3, 0);
+
+    //DESTRUCTORES Y LIBERACIONES//
+    closesocket(sock);
+    WSACleanup();
     vaciarCola(&ColaMovimientos);
     destruir_matriz((void **)laberinto.celdas, laberinto.filas);
     destruirSDL(&sdl);
     free(fantasmas);
 
-
+    printf("\nConexion cerrada y recursos liberados.\n");
 
     return 0;
 }

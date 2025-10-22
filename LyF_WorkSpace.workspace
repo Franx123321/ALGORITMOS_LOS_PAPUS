@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_workspace_file>
+	<Workspace title="LyF_WorkSpace">
+		<Project filename="Laberintos_y_Fantasmas/TP.cbp" />
+		<Project filename="Servidor/Servidor.cbp" />
+	</Workspace>
+</CodeBlocks_workspace_file>

@@ -6,6 +6,11 @@
 #include <string.h>
 #include <time.h>
 #include <ctype.h>
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#ifdef _MSC_VER
+    #pragma comment(lib, "ws2_32.lib")
+#endif
 
 #ifdef _WIN32
     // Windows (MinGW / MSVC)
@@ -55,6 +60,8 @@
 #define ERROR_MEMORIA 0
 #define ERROR_GENERACION 0
 #define TODO_BIEN 1
+
+#define PUERTO 7777
 
 #define COLOR_BLANCO (SDL_Color){255, 255, 255, 255}
 #define COLOR_ROJO (SDL_Color){255, 0, 0, 255}

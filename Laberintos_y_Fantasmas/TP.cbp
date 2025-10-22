@@ -7,13 +7,16 @@
 		<Option compiler="gcc" />
 		<Build>
 			<Target title="Debug">
-				<Option output="bin/Debug/TP" prefix_auto="1" extension_auto="1" />
+				<Option output="TP" prefix_auto="1" extension_auto="1" />
 				<Option object_output="obj/Debug/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
 				<Compiler>
 					<Add option="-g" />
 				</Compiler>
+				<Linker>
+					<Add library="ws2_32" />
+				</Linker>
 			</Target>
 			<Target title="Release">
 				<Option output="bin/Release/TP" prefix_auto="1" extension_auto="1" />
@@ -39,7 +42,24 @@
 			<Add library="SDL2_ttf" />
 			<Add directory="SDL2/lib" />
 		</Linker>
+		<Unit filename="Funciones_Generacion.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Funciones_Generacion.h" />
+		<Unit filename="Funciones_Partida.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Funciones_Partida.h" />
+		<Unit filename="Funciones_SDL.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Funciones_SDL.h" />
+		<Unit filename="Funciones_Tablero.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Funciones_Tablero.h" />
 		<Unit filename="Macros.h" />
+		<Unit filename="Macros_Estructuras.h" />
 		<Unit filename="cola.c">
 			<Option compilerVar="CC" />
 		</Unit>
