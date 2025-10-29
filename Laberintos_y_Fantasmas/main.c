@@ -24,6 +24,8 @@ int main()
     char buffer[256];
     int opMenu, bytesLeidos;
 
+    system("chcp 65001 > nul");
+
     srand(time(NULL));
 
     //CONFIGURACION//
@@ -60,7 +62,7 @@ int main()
         WSACleanup();
         exit(1);
     }
-    
+
     dirServidor.sin_family = AF_INET;
     dirServidor.sin_port = htons(PUERTO);
     inet_pton(AF_INET, "127.0.0.1", &dirServidor.sin_addr);
@@ -74,7 +76,7 @@ int main()
             free(fantasmas);
             exit(1);
     }
-    
+
     printf("\nConectado con exito al servidor...\n");
 
     bytesLeidos = recv(sock, buffer, sizeof(buffer) - 1, 0);
@@ -105,7 +107,7 @@ int main()
         WSACleanup();
         free(fantasmas);
         exit(1);
-    } 
+    }
 
     //Aca se guarda la disposicion inicial del laberinto en un archivo de texto
     guardarLaberinto(&laberinto);
