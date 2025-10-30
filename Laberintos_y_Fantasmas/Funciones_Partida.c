@@ -590,7 +590,7 @@ int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFant
         //Usar la fuente HUD local si existe, sino la pasada por parametro
         TTF_Font *fuenteParaHUD = (fuenteHudLocal ? fuenteHudLocal : fuenteHudOriginal);
 
-        dibujarTablero(sdl->renderer, laberinto, jugador, fuenteParaHUD, tamCeldaReal, offsetX, escalaTexto);
+        dibujarTablero(sdl, laberinto, jugador, fuenteParaHUD, tamCeldaReal, offsetX, escalaTexto);
 
         SDL_RenderPresent(sdl->renderer);
 

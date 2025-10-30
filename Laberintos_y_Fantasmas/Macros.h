@@ -113,6 +113,7 @@ typedef struct {
     SDL_Renderer *renderer;
     TTF_Font *fuente;
     TTF_Font *fuenteHud;
+    SDL_Texture *sprites;
     int ancho;
     int alto;
     int tamFuente;

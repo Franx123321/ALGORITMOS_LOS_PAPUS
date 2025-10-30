@@ -5,6 +5,8 @@ int inicializarSDL(ContextoSDL *sdl, const Configuracion *config)
 {
     float escalaX, escalaY, escala;
     int ancho, alto, base, tamMedio;
+    SDL_Surface *surSprites;
+    SDL_RWops *streamSprites;
 
     if(!sdl || !config)
     {
@@ -60,6 +62,34 @@ int inicializarSDL(ContextoSDL *sdl, const Configuracion *config)
         return ERROR_SDL;
     }
 
+    streamSprites = SDL_RWFromFile("assets/images/SpriteAtlas.bmp", "rb");
+    if (!streamSprites)
+    {
+        printf("\nERROR al abrir archivo de sprites: %s", SDL_GetError());
+
+        SDL_DestroyRenderer(sdl->renderer);
+        SDL_DestroyWindow(sdl->ventana);
+        TTF_Quit();
+        SDL_Quit();
+        return ERROR_SDL;
+    }
+
+    surSprites = SDL_LoadBMP_RW(streamSprites, 1);
+    if (!surSprites)
+    {
+        printf("\nERROR al leer archivo de sprites: %s", SDL_GetError());
+
+        SDL_RWclose(streamSprites);
+        SDL_DestroyRenderer(sdl->renderer);
+        SDL_DestroyWindow(sdl->ventana);
+        TTF_Quit();
+        SDL_Quit();
+        return ERROR_SDL;
+    }
+
+    sdl->sprites = SDL_CreateTextureFromSurface(sdl->renderer, surSprites);
+    SDL_FreeSurface(surSprites);
+
     if(ancho > 0 && alto > 0)
         SDL_RenderSetLogicalSize(sdl->renderer, ancho, alto);
 
@@ -90,6 +120,7 @@ int inicializarSDL(ContextoSDL *sdl, const Configuracion *config)
     {
         printf("\nERROR al cargar una fuente: %s", TTF_GetError());
 
+        SDL_DestroyTexture(sdl->sprites);
         SDL_DestroyRenderer(sdl->renderer);
         SDL_DestroyWindow(sdl->ventana);
         TTF_Quit();
@@ -105,6 +136,7 @@ int inicializarSDL(ContextoSDL *sdl, const Configuracion *config)
         TTF_CloseFont(sdl->fuente);
         sdl->fuente = NULL;
 
+        SDL_DestroyTexture(sdl->sprites);
         SDL_DestroyRenderer(sdl->renderer);
         SDL_DestroyWindow(sdl->ventana);
         TTF_Quit();
@@ -233,6 +265,12 @@ void destruirSDL(ContextoSDL *sdl)
 
     TTF_CloseFont(sdl->fuenteHud);
     sdl->fuenteHud = NULL;
+
+    if(sdl->sprites)
+    {
+        SDL_DestroyTexture(sdl->sprites);
+        sdl->sprites = NULL;
+    }
 
     if(sdl->renderer)
     {

@@ -262,14 +262,14 @@ int guardarLaberinto(Tablero *laberinto)
     return TODO_BIEN;
 }
 
-void dibujarTablero(SDL_Renderer *renderer, Tablero *laberinto, Jugador *j, TTF_Font *fuente,
+void dibujarTablero(ContextoSDL *sdl, Tablero *laberinto, Jugador *j, TTF_Font *fuente,
                     int tamCeldaReal, int offsetX, float escalaTexto)
 {
     int I, J;
     char celda, mensajeHUD[100];
     SDL_Rect recta;
 
-    if(!laberinto || !laberinto->celdas || !renderer || !fuente)
+    if(!laberinto || !laberinto->celdas || !sdl->renderer || !fuente)
         return;
 
     for(I = 0; I < laberinto->filas; I++)
@@ -286,30 +286,30 @@ void dibujarTablero(SDL_Renderer *renderer, Tablero *laberinto, Jugador *j, TTF_
             //Colores para cada cosa, se pueden cambiar cambiando los parametros 2, 3 y 4
             switch (celda)
             {
-                case '#': SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+                case '#': SDL_SetRenderDrawColor(sdl->renderer, 0, 0, 0, 255);
                           break;
-                case 'J': SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255);
+                case 'J': SDL_SetRenderDrawColor(sdl->renderer, 0, 0, 255, 255);
                           break;
-                case 'S': SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
+                case 'S': SDL_SetRenderDrawColor(sdl->renderer, 0, 255, 0, 255);
                           break;
-                case 'F': SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+                case 'F': SDL_SetRenderDrawColor(sdl->renderer, 255, 0, 0, 255);
                           break;
-                case 'V': SDL_SetRenderDrawColor(renderer, 128, 0, 128, 255);
+                case 'V': SDL_SetRenderDrawColor(sdl->renderer, 128, 0, 128, 255);
                           break;
-                case 'P': SDL_SetRenderDrawColor(renderer, 255, 215, 0, 255);
+                case 'P': SDL_SetRenderDrawColor(sdl->renderer, 255, 215, 0, 255);
                           break;
-                default:  SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+                default:  SDL_SetRenderDrawColor(sdl->renderer, 255, 255, 255, 255);
                           break;
             }
 
-            SDL_RenderFillRect(renderer, &recta);
+            SDL_RenderFillRect(sdl->renderer, &recta);
         }
     }
 
     sprintf(mensajeHUD, "Vidas: %d", j->vidas);
-    renderizarHUD(renderer, fuente, mensajeHUD, COLOR_AZUL, 10, 3, escalaTexto);
+    renderizarHUD(sdl->renderer, fuente, mensajeHUD, COLOR_AZUL, 10, 3, escalaTexto);
     sprintf(mensajeHUD, "Puntaje: %d", j->puntaje);
-    renderizarHUD(renderer, fuente, mensajeHUD, COLOR_AZUL, 198, 3, escalaTexto);
+    renderizarHUD(sdl->renderer, fuente, mensajeHUD, COLOR_AZUL, 198, 3, escalaTexto);
     sprintf(mensajeHUD, "Jugador: %s", j->nombre);
-    renderizarHUD(renderer, fuente, mensajeHUD, COLOR_AZUL, 423, 3, escalaTexto);
+    renderizarHUD(sdl->renderer, fuente, mensajeHUD, COLOR_AZUL, 423, 3, escalaTexto);
 }
