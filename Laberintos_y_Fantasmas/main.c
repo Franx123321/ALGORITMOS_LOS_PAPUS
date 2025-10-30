@@ -32,7 +32,7 @@ int main()
         printf("\nERROR al leer el archivo de configuración.");
         exit(1);
     }
-
+    
     fantasmas = malloc(config.maxFantasmas * sizeof(Fantasma));
     if(!fantasmas)
     {

@@ -13,9 +13,11 @@
 				<Option compiler="gcc" />
 				<Compiler>
 					<Add option="-g" />
+					<Add directory="SDL2/include" />
 				</Compiler>
 				<Linker>
 					<Add library="ws2_32" />
+					<Add directory="SDL2/lib" />
 				</Linker>
 			</Target>
 			<Target title="Release">
@@ -40,6 +42,7 @@
 			<Add library="SDL2main" />
 			<Add library="SDL2" />
 			<Add library="SDL2_ttf" />
+			<Add library="SDL2_mixer" />
 			<Add directory="SDL2/lib" />
 		</Linker>
 		<Unit filename="Funciones_Generacion.c">

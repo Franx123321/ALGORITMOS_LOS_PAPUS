@@ -4,7 +4,7 @@
 int inicializarSDL(ContextoSDL *sdl, const Configuracion *config)
 {
     float escalaX, escalaY, escala;
-    int ancho, alto, base, tamMedio;
+    int ancho, alto, base, tamMedio, flags, inicializado;
 
     if(!sdl || !config)
     {
@@ -54,6 +54,30 @@ int inicializarSDL(ContextoSDL *sdl, const Configuracion *config)
     if(!sdl->renderer)
     {
         printf("\nERROR al crear renderizador: %s", SDL_GetError());
+        SDL_DestroyWindow(sdl->ventana);
+        TTF_Quit();
+        SDL_Quit();
+        return ERROR_SDL;
+    }
+
+    flags = MIX_INIT_MP3 | MIX_INIT_OGG;
+    inicializado = Mix_Init(flags);
+
+    if((inicializado & flags) != flags)
+    {
+        printf("\nERROR al inicializar SDL_mixer: %s",Mix_GetError());
+        SDL_DestroyRenderer(sdl->renderer);
+        SDL_DestroyWindow(sdl->ventana);
+        TTF_Quit();
+        SDL_Quit();
+        return ERROR_SDL;
+    }
+
+    if(Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) == -1)
+    {
+        printf("\nERROR al inicializar el audio: %s",Mix_GetError());
+        Mix_Quit();
+        SDL_DestroyRenderer(sdl->renderer);
         SDL_DestroyWindow(sdl->ventana);
         TTF_Quit();
         SDL_Quit();
@@ -246,6 +270,8 @@ void destruirSDL(ContextoSDL *sdl)
         sdl->ventana = NULL;
     }
 
+    Mix_CloseAudio();
+    Mix_Quit();
     TTF_Quit();
     SDL_Quit();
 }
