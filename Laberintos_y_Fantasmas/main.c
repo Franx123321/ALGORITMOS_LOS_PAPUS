@@ -1,353 +1,253 @@
-/* Este codigo tiene muchos mas comentarios que el juego porque aca hay muchos conceptos nuevos
-que esta bueno explicar para que se entiendan .
-Nota para el profe: Pido disculpas si algun comentario queda fuera de lugar, 
-son evidencias de mi lento descenso a la locura que me olvide de borrar */
+#define SDL_MAIN_HANDLED
+#include "Macros.h"
+#include "cola.h"
+#include "Funciones_SDL.h"
+#include "Funciones_Tablero.h"
+#include "Funciones_Generacion.h"
+#include "Funciones_Partida.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <winsock2.h>
-#include <ws2tcpip.h>
-#include <windows.h>
-
-#include "cola.h" //Incluyo la cola para manejar mensajes de clientes
-
-#ifdef _MSC_VER
-    #pragma comment(lib, "ws2_32.lib")
-#endif
-
-#define PUERTO 7777
-#define EN_ESPERA 5 //Cantidad de clientes en espera
-#define MAX_CLIENTES 5 //Maximo de clientes simultaneos
-#define TAM_BUFFER 256
-#define MAX_NOMBRE 50
-
-typedef struct {
-    int id;
-    char nombre[MAX_NOMBRE];
-} DatosJugador;
-
-typedef struct {
-    int id;
-    char nombre[MAX_NOMBRE];
-    int puntuacion;
-    int movimientos;
-} DatosPartida;
-
-typedef struct{
-    SOCKET sock;
-    int *clientesConectados;
-    HANDLE mutexClientes;
-    tCola cola;  // Cola para las peticiones del cliente
-}DatosCliente;
-
-// Mutex global para sincronizar acceso al archivo partidas.dat
-HANDLE hArchivoMutex = NULL;
-
-DWORD WINAPI atenderCliente(LPVOID arg);
-
-/* 
-    1. DWORD es el valor de retorno que pide la API de threads de Windows, se usa en createThread
-    2. WINAPI es una convencion de llamadas de Windows
-    3. LPVOID es un typedef para void*, se usa en su lugar porque algunas estructuras de 
-       threads estan definidas con LPVOID y en casos raros C se enoja si el tipo no coincide 
-// Función para procesar y guardar datos en archivo
-int procesarYGuardarDatos(const char* buffer);
-
-       exactamente en nombre
-*/
-
-
-int procesarYGuardarDatos(const char* buffer) {
-    char nombre[MAX_NOMBRE];
-    int puntuacion, movimientos;
-    DatosPartida partida;
-    DatosJugador jugador, jugadorExistente;
-    FILE *archPartida, *archJugadores;
-    long pos;
-    int resultado = 0, encontrado = 0;
-
-    if(sscanf(buffer, "%[^|]|%d|%d", nombre, &puntuacion, &movimientos) != 3) {
-        printf("Error: formato de mensaje invalido\n");
-        return 0;
-    }
-
-    // Preparar estructura DatosPartida
-    strncpy(partida.nombre, nombre, MAX_NOMBRE - 1);
-    partida.nombre[MAX_NOMBRE - 1] = '\0';
-    partida.puntuacion = puntuacion;
-    partida.movimientos = movimientos;
-
-    // Proteger acceso al archivo
-    WaitForSingleObject(hArchivoMutex, INFINITE);
-
-    archJugadores = fopen("Jugadores.dat", "r+b");
-    if (!archJugadores) {
-        archJugadores = fopen("Jugadores.dat", "w+b");
-    }
-    if(archJugadores) {
-        while(fread(&jugadorExistente, sizeof(DatosJugador), 1, archJugadores) == 1) {
-            if(strcmp(jugadorExistente.nombre, nombre) == 0) {
-                encontrado = 1;
-                break;
-            }
-        }
-        if (!encontrado) {
-            // Agregar nuevo jugador
-            strncpy(jugador.nombre, nombre, MAX_NOMBRE - 1);
-            jugador.nombre[MAX_NOMBRE - 1] = '\0';
-            jugador.id = (int)(ftell(archJugadores) / sizeof(DatosJugador)) + 1;
-            fseek(archJugadores, 0, SEEK_END);
-            fwrite(&jugador, sizeof(DatosJugador), 1, archJugadores);
-        }
-        fflush(archJugadores);
-        fclose(archJugadores);
-    } else {
-        printf("Error al abrir jugadores.dat\n");
-    }
-
-    archPartida = fopen("Partidas.dat", "ab");
-    if(archPartida) {
-        fseek(archPartida, 0, SEEK_END);
-        pos = ftell(archPartida);
-        partida.id = (int)(pos / sizeof(DatosPartida)) + 1;
-        
-        if(fwrite(&partida, sizeof(DatosPartida), 1, archPartida) == 1) {
-            printf("Datos guardados: Jugador=%s, ID=%d, Puntuacion=%d, Movimientos=%d\n",
-                   partida.nombre, partida.id, partida.puntuacion, partida.movimientos);
-            resultado = 1;
-        }
-        
-        fflush(archPartida);
-        fclose(archPartida);
-    } else {
-        printf("Error al abrir partidas.dat\n");
-    }
-
-    ReleaseMutex(hArchivoMutex);
-    return resultado;
-}
+//CONFIGURACION//
+int leerConfig(Configuracion *config); //Esta se queda en main porque no se donde mandarla
 
 
 int main()
 {
-    WSADATA wsaData;  //Muy resumidamente, WSADATA es una struct de Windows que sirve para inicializar el sistema de sockets, es exclusivo de Windows
+    Configuracion config;
+    Tablero laberinto;
+    Jugador jugador;
+    Fantasma *fantasmas;
+    ContextoSDL sdl;
+    WSADATA wsaData;
+    SOCKET sock; //No le puedo llamar socket porque asi se llama la funcion
+    struct sockaddr_in dirServidor;
+    char buffer[256];
+    int opMenu, bytesLeidos, cantMovimientos=0;
 
-    SOCKET socketServidor = INVALID_SOCKET, 
-           socketCliente = INVALID_SOCKET; //Creo que el tipo de dato explica bastante bien que es esto
-    HANDLE mutexClientes = NULL, 
-           threadCliente = NULL;
-    struct sockaddr_in dirServidor, dirCliente; //Direcciones de sockets
-    int tamDirCliente, clientesConectados = 0;
-    const char *lleno = "SERVIDOR LLENO";
-    DatosCliente *datos = NULL;
+    system("chcp 65001 > nul");
 
-    tamDirCliente = sizeof(dirCliente);
+    srand(time(NULL));
 
-    printf("Inicializando servidor TCP...\n");
-
-    if(WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) //Aca se inicializa el sistema de sockets
+    //CONFIGURACION//
+    if(leerConfig(&config) == 0)
     {
-        printf("\nERROR al inicializar sistema de Sockets. Codigo: %d\n", WSAGetLastError());
+        printf("\nERROR al leer el archivo de configuración.");
+        exit(1);
+    }
+    
+    fantasmas = malloc(config.maxFantasmas * sizeof(Fantasma));
+    if(!fantasmas)
+    {
+        printf("\nERROR al reservar memoria para los fantasmas.");
         exit(1);
     }
 
-    socketServidor = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP); //Se abre el socket
-    if(socketServidor == INVALID_SOCKET)
+    //CONEXION AL SERVER//
+    /* Explico algo: Si falla algo en la creacion de variables relacionadas con la conexion,
+       termino el programa, porque esto significaria que fallo algo en la memoria, prefiero
+       no arriesgarme a tener errores de memoria o codigo. El modo contingencia se activa solo
+       si falla la conexion, no si falla algo interno del propio juego */
+    if(WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
     {
-        printf("ERROR al crear socket. Codigo: %d\n", WSAGetLastError());
-        WSACleanup(); //Limpieza del sistema de sockets
+        printf("\nERROR al inicializar Winsock.\n");
+        free(fantasmas);
         exit(1);
     }
 
-    //Aca se configura la direccion del servidor
+    sock = socket(AF_INET, SOCK_STREAM, 0);
+    if(sock == INVALID_SOCKET)
+    {
+        printf("\nERROR al crear socket.\n");
+        free(fantasmas);
+        WSACleanup();
+        exit(1);
+    }
+
     dirServidor.sin_family = AF_INET;
-    dirServidor.sin_addr.s_addr = INADDR_ANY; //Aceptar conexiones desde cualquier IP
-    dirServidor.sin_port = htons(PUERTO); //Se le asigna el puerto definido en la macro
+    dirServidor.sin_port = htons(PUERTO);
+    inet_pton(AF_INET, "127.0.0.1", &dirServidor.sin_addr);
 
-    //Se asocia el socket a la direccion
-    if(bind(socketServidor, (struct sockaddr*)&dirServidor, sizeof(dirServidor)) == SOCKET_ERROR)
+    //Intento conectarme
+    if(connect(sock, (struct sockaddr*)&dirServidor, sizeof(dirServidor)) == SOCKET_ERROR)
     {
-        printf("\nERROR en el bind. Codigo: %d\n", WSAGetLastError());
-        closesocket(socketServidor);
-        WSACleanup();
-        exit(1);
-    }
-
-    //Se pone el socket en modo escucha
-    if(listen(socketServidor, EN_ESPERA) == SOCKET_ERROR)
+            printf("\nERROR al conectar al servidor,se jugara en modo contingencia.\n");
+            closesocket(sock);
+            WSACleanup();
+            /*
+            BORRADO
+            */
+    }//////////////////////////////////////////////////////////////////////
+    else
     {
-        printf("\nERROR al poner el socket en modo escucha. Codigo: %d\n", WSAGetLastError()); 
-        closesocket(socketServidor);
-        WSACleanup();
-        exit(1);
-    }
+        printf("\nConectado con exito al servidor...\n");
 
-    printf("\nServidor escuchando en puerto %d...\n", PUERTO);
-
-    /*Si llego bien hasta aca, creamos mutex, el mutex sirve para sincronizar acceso al 
-    contador de clientes (se evita la condicion de carrera)*/
-    mutexClientes = CreateMutex(NULL, FALSE, NULL);
-    if(mutexClientes == NULL)
-    {
-        printf("\nERROR al crear el mutex.");
-        closesocket(socketServidor);
-        WSACleanup();
-        exit(1);
-    }
-
-    // Crear mutex para proteger accesos al archivo partidas.dat
-    hArchivoMutex = CreateMutex(NULL, FALSE, NULL);
-    if(hArchivoMutex == NULL)
-    {
-        printf("\nERROR al crear el mutex de archivo.");
-        CloseHandle(mutexClientes);
-        closesocket(socketServidor);
-        WSACleanup();
-        exit(1);
-    }
-
-
-    //La magia, se pone en espera de clientes
-    while(1)
-    {
-        printf("\nEsperando nueva conexion...\n");
-
-        socketCliente = accept(socketServidor, (struct sockaddr*)&dirCliente, &tamDirCliente);
-        if(socketCliente == INVALID_SOCKET)
+        bytesLeidos = recv(sock, buffer, sizeof(buffer) - 1, 0);
+        if(bytesLeidos > 0)
         {
-            printf("\nERROR al aceptar una conexion. Codigo: %d\n", WSAGetLastError());
-            continue;
-        }
-
-        WaitForSingleObject(mutexClientes, INFINITE);
-        if(clientesConectados >= MAX_CLIENTES)
-        {
-            ReleaseMutex(mutexClientes);
-            send(socketCliente, lleno, (int)strlen(lleno), 0);
-            printf("\nRechazado cliente %s: %d debido a que el servidor esta lleno.", inet_ntoa(dirCliente.sin_addr), ntohs(dirCliente.sin_port));
-            closesocket(socketCliente);
-            continue;
-        }
-
-        ReleaseMutex(mutexClientes);
-        
-        printf("\nCliente conectado desde %s: %d\n", inet_ntoa(dirCliente.sin_addr), ntohs(dirCliente.sin_port));
-
-        datos = (DatosCliente*)malloc(sizeof(DatosCliente));
-        if(!datos)
-        {
-            printf("\nERROR al reservar memoria para los datos del cliente.\n");
-            closesocket(socketCliente);
-            continue;
-        }
-        datos->sock = socketCliente;
-        datos->clientesConectados = &clientesConectados;
-        datos->mutexClientes = mutexClientes;
-
-        //Aca se crea el thread para el cliente que acaba de llegar y con la funcion atenderCliente automaticamente se atiende
-        threadCliente = CreateThread(NULL, 0, atenderCliente, datos, 0, NULL);
-
-        //Cerrar conexion si falla
-        if(threadCliente == NULL)
-        {
-            printf("\nERROR al crear thread para el cliente.\n");
-            closesocket(socketCliente);
-            free(datos);
+            buffer[bytesLeidos] = '\0';
+            printf("\nServidor: %s\n", buffer);
         }
         else
-            CloseHandle(threadCliente); //Ya se atendio, se cierra
+            printf("\nNo se recibio ningun mensaje del servidor.\n");
+    }//////////////////////////////////////////////////////////////////////
+
+    //JUGADOR//
+    jugador.vidas = config.vidasIniciales;
+    jugador.posY = 1;
+    jugador.posX = 0;
+    jugador.puntaje = 0;
+
+    //TABLERO//
+    //Aca se carga el contenido del laberinto: paredes, caminos, salida, fantasmas, premios y vidas extra
+    laberinto.celdas = NULL;
+    laberinto.filas = config.filas;
+    laberinto.columnas = config.columnas;
+    if(cargarLaberinto(&laberinto, fantasmas, &jugador, config) != TODO_BIEN)
+    {
+        printf("\nError al cargar el laberinto.");
+        closesocket(sock);
+        WSACleanup();
+        free(fantasmas);
+        exit(1);
     }
 
-    CloseHandle(mutexClientes);
-    CloseHandle(hArchivoMutex);
-    closesocket(socketServidor);
+    //Aca se guarda la disposicion inicial del laberinto en un archivo de texto
+    guardarLaberinto(&laberinto);
+
+    //SDL//
+    if(inicializarSDL(&sdl, &config) != TODO_BIEN)
+    {
+        closesocket(sock);
+        WSACleanup();
+        free(fantasmas);
+        destruir_matriz((void **)laberinto.celdas, laberinto.filas);
+        exit(1);
+    }
+
+    //LOGICA DE JUEGO//
+    opMenu = menu(sdl.renderer, sdl.fuente, sdl.ancho, sdl.alto);
+    if(opMenu == 3)
+        printf("\nSe selecciono salir");
+    else if(opMenu == 2) //TEMPORAL
+        destruir_matriz((void **)laberinto.celdas, laberinto.filas);
+    else if(opMenu == 1)
+        if (pantallaIngresarNombre(&sdl, sdl.fuente, &jugador) != SALIR)
+            if(Jugar(&laberinto, &jugador, fantasmas, config.maxFantasmas, &sdl, &cantMovimientos) != TODO_BIEN)
+                printf("\nSe produjo un error durante el juego.");
+
+    enviarDatosAlServidor(sock, jugador.nombre, jugador.puntaje, cantMovimientos);
+
+    send(sock, "FIN", 3, 0);
+
+    //DESTRUCTORES Y LIBERACIONES//
+    closesocket(sock);
     WSACleanup();
+    destruir_matriz((void **)laberinto.celdas, laberinto.filas);
+    destruirSDL(&sdl);
+    free(fantasmas);
+
+    printf("\nConexion cerrada y recursos liberados.\n");
 
     return 0;
 }
 
 
-/* Esta maravilla atiende al cliente, le manda que se pudo conectar (bienvenida en este caso)
-   y tambien espera a que termine la conexion. */
-DWORD WINAPI atenderCliente(LPVOID arg)
+
+//CONFIGURACION//
+int leerConfig(Configuracion *config)
 {
-    if (!arg) return 1;
-    
-    DatosCliente *datos = (DatosCliente *)arg;
-    SOCKET cliente = datos->sock;
-     char buffer[TAM_BUFFER],
-         *bienvenida = "Bienvenido al servidor de Laberintos y Fantasmas!\n";
-    int bytes;
-    char mensaje[TAM_BUFFER];
+    int valor, seteados = 0;
+    char linea[128], clave[80], *sep;
 
-    // Inicializar cola de mensajes
-    crearCola(&datos->cola);
+    FILE *archConfig = fopen("config.txt", "rt");
+    if (!archConfig)
+        return ERROR_ARCH;
 
-    WaitForSingleObject(datos->mutexClientes, INFINITE);
-    (*datos->clientesConectados)++;
-    printf("\nClientes conectados: %d\n", *datos->clientesConectados);
-    ReleaseMutex(datos->mutexClientes); //No es lo mismo liberar que cerrar
+    while (fgets(linea, 128, archConfig)) {
+        sep = strchr(linea, '=');
+        if (!sep) continue;
 
-    send(cliente, bienvenida, (int)strlen(bienvenida), 0);
+        strncpy(clave, linea, sep - linea);
+        *(clave + (sep - linea)) = '\0';
 
-    // Bucle principal: recibir mensajes y procesarlos
-    while(1)
+        sscanf(sep + 1, " %d", &valor);
+
+        if (strcmp(clave, "filas") == 0) {
+            config->filas = valor;
+            seteados |= 1; // Bit: |= 000001
+        }
+        if (strcmp(clave, "columnas") == 0) {
+            config->columnas = valor;
+            seteados |= 2; // Bit: |= 000010
+        }
+        if (strcmp(clave, "vidas_inicio") == 0) {
+            config->vidasIniciales = valor;
+            seteados |= 4; // Bit: |= 000100
+        }
+        if (strcmp(clave, "maximo_numero_fantasmas") == 0) {
+            config->maxFantasmas = valor;
+            seteados |= 8; // Bit: |= 001000
+        }
+        if (strcmp(clave, "maximo_numero_premios") == 0) {
+            config->maxPremios = valor;
+            seteados |= 16; // Bit: |= 010000
+        }
+        if (strcmp(clave, "maximo_vidas_extra") == 0) {
+            config->maxVidasExtra = valor;
+            seteados |= 32; // Bit: |= 100000
+        }
+    }
+
+    // Se fija si todos los bits están seteados (todos los valores presentes)
+    if (seteados != 63) { // Bits: 111111
+        printf("Error de configuracion: faltan parametros en el archivo o estan mal escritos.\n");
+        printf("    (tip: se escribe 'clave=valor', separados con signo igual)\n");
+        return ERROR_CONFIG;
+    }
+
+    // Chequeo de rangos
+    if(config->filas < MIN_FILAS || config->columnas < MIN_COLUMNAS) {
+        printf("\nTamaño del laberinto inferior al mínimo posible, revise la configuración.");
+        return ERROR_CONFIG;
+    }
+    if(config->filas > MAX_FILAS || config->columnas > MAX_COLUMNAS) {
+        printf("\nTamaño del laberinto superior al máximo posible, revise la configuración.");
+        return ERROR_CONFIG;
+    }
+    if(config->columnas <= (config->filas-3))
     {
-        bytes = recv(cliente, buffer, sizeof(buffer) - 1, 0);
-        if(bytes > 0)
-        {
-            buffer[bytes] = '\0';
-            printf("Cliente: '%s'\n", buffer);
+        printf("\nPor razones de renderizado, no puede haber mas de 3 columnas menos que la cantidad de filas, por favor cambie la configuracion.");
+        return ERROR_CONFIG;
+    }
+    if(config->maxFantasmas < 1 || config->maxPremios < 1) {
+        printf("\nDebe haber al menos un fantasma o premio, revise la configuración.");
+        return ERROR_CONFIG;
+    }
+    if(config->maxFantasmas > (config->filas * config->columnas) / 4) {
+        printf("\nEl número de fantasmas es demasiado alto para el tamaño del laberinto, revise la configuración.");
+        return ERROR_CONFIG;
+    }
+    if(config->maxPremios > (config->filas * config->columnas) / 4) {
+        printf("\nEl número de premios es demasiado alto para el tamaño del laberinto, revise la configuración.");
+        return ERROR_CONFIG;
+    }
+    if(config->maxVidasExtra > (config->filas * config->columnas) / 4) {
+        printf("\nEl número de vidas extra es demasiado alto para el tamaño del laberinto, revise la configuración.");
+        return ERROR_CONFIG;
+    }
+    if(config->maxPremios < 0) {
+        printf("\nEl número de premios no puede ser un número negativo, revise la configuración.");
+        return ERROR_CONFIG;
+    }
+    if(config->maxVidasExtra < 0) {
+        printf("\nEl máximo número de vidas extra no puede ser un número negativo, revise la configuración.");
+        return ERROR_CONFIG;
+    }
+    if(config->vidasIniciales < 1) {
+        printf("\nNo puede empezar el juego con menos de 1 vida, revise la configuración.");
+        return ERROR_CONFIG;
+    }
 
-            if(strcmp(buffer, "FIN") == 0)
-            {
-                printf("\nSe recibio fin, cerrando conexion con el cliente...\n");
-                break;
-            }
+    fclose(archConfig);
 
-            // Encolar el mensaje
-            if(encolar(&datos->cola, buffer, strlen(buffer) + 1)) {
-                // Procesar todos los mensajes en la cola
-                while(!colaVacia(&datos->cola)) {
-                    if(desencolar(&datos->cola, mensaje, TAM_BUFFER)) {
-                        if(procesarYGuardarDatos(mensaje)) {
-                            printf("Mensaje procesado exitosamente\n");
-                        } else {
-                            printf("Error al procesar mensaje\n");
-                        }
-                    }
-                }
-            } else {
-                printf("Error al encolar mensaje\n");
-            }
-        }
-        else if(bytes == 0)
-        {
-            printf("\nEl cliente cerro la conexion.\n");
-            break;
-        }
-        else
-        {
-            int error_code = WSAGetLastError();
-            if (error_code == WSAECONNABORTED || error_code == WSAECONNRESET) {
-                printf("\nEl cliente se desconecto abruptamente.\n");
-            } else {
-                printf("\nError al recibir mensajes del cliente. Codigo: %d\n", error_code);
-            }
-            break;
-        }
-    }   
-
-    closesocket(cliente);
-
-    WaitForSingleObject(datos->mutexClientes, INFINITE);
-    (*datos->clientesConectados)--;
-    printf("\nCliente desconectado.\n\nQuedan conectados: %d\n", *datos->clientesConectados);
-    ReleaseMutex(datos->mutexClientes); 
-
-    // Limpiar recursos
-    vaciarCola(&datos->cola);
-    free(datos);
-    return 0;
-} 
+    return TODO_BIEN;
+}
