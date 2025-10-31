@@ -267,7 +267,7 @@ void dibujarTablero(ContextoSDL *sdl, Tablero *laberinto, Jugador *j, TTF_Font *
 {
     int I, J;
     char celda, mensajeHUD[100];
-    SDL_Rect recta;
+    SDL_Rect recta, rectaDest;
 
     if(!laberinto || !laberinto->celdas || !sdl->renderer || !fuente)
         return;
@@ -276,14 +276,53 @@ void dibujarTablero(ContextoSDL *sdl, Tablero *laberinto, Jugador *j, TTF_Font *
     {
         for(J = 0; J < laberinto->columnas; J++)
         {
-            recta.x = offsetX + J * tamCeldaReal;
-            recta.y = I * tamCeldaReal + MARGEN;
-            recta.w = tamCeldaReal;
-            recta.h = tamCeldaReal;
+            rectaDest.x = offsetX + J * tamCeldaReal;
+            rectaDest.y = I * tamCeldaReal + MARGEN;
+            rectaDest.w = tamCeldaReal;
+            rectaDest.h = tamCeldaReal;
 
             celda = laberinto->celdas[I][J];
 
+            recta.x = celda == '#' ? 24 : 0;
+            recta.y = 0;
+            recta.w = 24;
+            recta.h = 24;
+
+            SDL_RenderCopy(sdl->renderer, sdl->sprites, &recta, &rectaDest);
+
+            if (celda == 'E') {
+                recta.x = 48;
+                recta.y = 0;
+                SDL_RenderCopy(sdl->renderer, sdl->sprites, &recta, &rectaDest);
+            }
+            else if (celda == 'S') {
+                recta.x = 72;
+                recta.y = 0;
+                SDL_RenderCopy(sdl->renderer, sdl->sprites, &recta, &rectaDest);
+            }
+            else if (celda == 'J') {
+                recta.x = 0;
+                recta.y = 24;
+                SDL_RenderCopy(sdl->renderer, sdl->sprites, &recta, &rectaDest);
+            }
+            else if (celda == 'F') {
+                recta.x = 24;
+                recta.y = 24;
+                SDL_RenderCopy(sdl->renderer, sdl->sprites, &recta, &rectaDest);
+            }
+            else if (celda == 'V') {
+                recta.x = 72;
+                recta.y = 24;
+                SDL_RenderCopy(sdl->renderer, sdl->sprites, &recta, &rectaDest);
+            }
+            else if (celda == 'P') {
+                recta.x = 48;
+                recta.y = 24;
+                SDL_RenderCopy(sdl->renderer, sdl->sprites, &recta, &rectaDest);
+            }
+
             //Colores para cada cosa, se pueden cambiar cambiando los parametros 2, 3 y 4
+            /*
             switch (celda)
             {
                 case '#': SDL_SetRenderDrawColor(sdl->renderer, 0, 0, 0, 255);
@@ -303,6 +342,7 @@ void dibujarTablero(ContextoSDL *sdl, Tablero *laberinto, Jugador *j, TTF_Font *
             }
 
             SDL_RenderFillRect(sdl->renderer, &recta);
+            */
         }
     }
 

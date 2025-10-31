@@ -49,10 +49,10 @@
 #define DERROTA -1
 #define SALIR 0
 
-#define MIN_ANCHO 800
-#define MIN_ALTO 600
-#define TAM_CELDA 30 //Tamaño en pixeles
-#define MARGEN 35    //Margen superior para el HUD
+#define MIN_ANCHO 100
+#define MIN_ALTO 80
+#define TAM_CELDA 24 //Tamaño en pixeles
+#define MARGEN 64    //Margen superior para el HUD
 
 #define ERROR_ARCH 0
 #define ERROR_SDL 0
