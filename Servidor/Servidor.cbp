@@ -37,6 +37,10 @@
 		<Linker>
 			<Add library="ws2_32" />
 		</Linker>
+		<Unit filename="cola.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="cola.h" />
 		<Unit filename="main.c">
 			<Option compilerVar="CC" />
 		</Unit>
