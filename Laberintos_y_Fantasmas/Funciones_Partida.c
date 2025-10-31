@@ -445,7 +445,7 @@ int pantallaIngresarNombre(ContextoSDL *sdl, TTF_Font *fuente, Jugador *jugador)
 }
 
 int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFantasmas,
-            ContextoSDL *sdl, tCola *ColaMovimientos)
+            ContextoSDL *sdl, int* cantMovimientos)
 {
 
     char movimiento = 0, aseguradorMovimiento;
@@ -459,8 +459,11 @@ int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFant
     SDL_Event evento;
     SDL_Rect vp;
     Mix_Music *musica = NULL;
+    tCola ColaMovimientos;
 
-    if (!laberinto || !jugador || !fantasmas || !sdl || !ColaMovimientos)
+    crearCola(&ColaMovimientos);
+
+    if (!laberinto || !jugador || !fantasmas || !sdl || !&ColaMovimientos)
         return ERROR_MEMORIA;
 
     musica = Mix_LoadMUS("assets/plinplinplon.mp3");
@@ -513,28 +516,28 @@ int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFant
                 switch(evento.key.keysym.sym)
                 {
                     case SDLK_w: movimiento = 'w';
-                                 if(!encolar(ColaMovimientos, &movimiento, sizeof(char)))
+                                 if(!encolar(&ColaMovimientos, &movimiento, sizeof(char)))
                                  {
                                     printf("No se pudo realizar un movimiento.");
                                     break;
                                  }
                                  break;
                     case SDLK_s: movimiento = 's';
-                                 if(!encolar(ColaMovimientos, &movimiento, sizeof(char)))
+                                 if(!encolar(&ColaMovimientos, &movimiento, sizeof(char)))
                                  {
                                     printf("No se pudo realizar un movimiento.");
                                     break;
                                  }
                                  break;
                     case SDLK_a: movimiento = 'a';
-                                 if(!encolar(ColaMovimientos, &movimiento, sizeof(char)))
+                                 if(!encolar(&ColaMovimientos, &movimiento, sizeof(char)))
                                  {
                                     printf("No se pudo realizar un movimiento.");
                                     break;
                                  }
                                  break;
                     case SDLK_d: movimiento = 'd';
-                                 if(!encolar(ColaMovimientos, &movimiento, sizeof(char)))
+                                 if(!encolar(&ColaMovimientos, &movimiento, sizeof(char)))
                                  {
                                     printf("No se pudo realizar un movimiento.");
                                     break;
@@ -543,20 +546,21 @@ int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFant
                     case SDLK_ESCAPE: jugando = 0;
                                       break;
                     default:     movimiento = 'z';
-                                 if(!encolar(ColaMovimientos, &movimiento, sizeof(char)))
+                                 if(!encolar(&ColaMovimientos, &movimiento, sizeof(char)))
                                  {
                                     printf("No se pudo realizar un movimiento.");
                                     break;
                                  }
                                  break;
                 }
-                if(jugando && desencolar(ColaMovimientos, &aseguradorMovimiento, sizeof(char)))
+                if(jugando && desencolar(&ColaMovimientos, &aseguradorMovimiento, sizeof(char)))
                 {
                     estado = realizarMovimiento(laberinto, jugador, fantasmas, maxFantasmas, aseguradorMovimiento);
                     if(estado == DERROTA)
                         jugando = 0;
                     if(estado != MOV_INVALIDO)
                     {
+                        (*cantMovimientos) ++;
                         if(moverFantasmas(laberinto, fantasmas, jugador, maxFantasmas) == DERROTA)
                         {
                             estado = DERROTA;
@@ -609,6 +613,7 @@ int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFant
     Mix_HaltMusic();
     Mix_FreeMusic(musica);
     musica = NULL;
+    vaciarCola(&ColaMovimientos);
 
     if(estado == VICTORIA)
         victoria(sdl, fuenteLocal, jugador->puntaje);
@@ -767,4 +772,24 @@ void derrota(ContextoSDL *sdl, TTF_Font *fuente)
         }
         SDL_Delay(50);
     }
+}
+
+int enviarDatosAlServidor(SOCKET sock, const char* nombre, int puntuacion, int cantMovimientos)
+{
+    printf("\nEnviando datos al servidor...");
+    char buffer[1024];
+    if (sock == INVALID_SOCKET || !nombre){
+        printf("\nError: Socket invalido o nombre nulo.");
+        return ERROR_MEMORIA;
+    }//
+
+    sprintf(buffer, "%s|%d|%d", nombre, puntuacion, cantMovimientos);
+    if(send(sock, buffer, strlen(buffer), 0) == SOCKET_ERROR){
+        printf("\nError al enviar los datos al servidor.");
+        return ERROR_ENVIO;
+    }
+
+
+    printf("\nDatos enviados correctamente.");
+    return TODO_BIEN;
 }
