@@ -76,12 +76,9 @@ int procesarYGuardarDatos(const char* buffer) {
         printf("Error: nombre nulo\n");
         return 0;
     }
-    if(puntuacion < 0) {
-        printf("Error: puntuacion negativa\n");
+    if(puntuacion < 0 || movimientos < 0) {
+        printf("Error: puntuacion o movimientos invalidos\n");
         return 0;
-    }
-    if(movimientos == 0) {
-        return 0; // No guardar si el jugador perdió
     }
 
     // Preparar estructura DatosPartida
