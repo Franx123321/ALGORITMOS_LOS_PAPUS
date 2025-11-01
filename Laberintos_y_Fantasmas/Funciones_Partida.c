@@ -463,7 +463,7 @@ int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFant
 
     crearCola(&ColaMovimientos);
 
-    if (!laberinto || !jugador || !fantasmas || !sdl || !&ColaMovimientos)
+    if (!laberinto || !jugador || !fantasmas || !sdl)
         return ERROR_MEMORIA;
 
     musica = Mix_LoadMUS("assets/plinplinplon.mp3");
