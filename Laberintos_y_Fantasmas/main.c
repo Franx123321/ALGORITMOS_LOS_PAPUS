@@ -75,7 +75,7 @@ int main()
             /*
             BORRADO
             */
-    }//////////////////////////////////////////////////////////////////////
+    }
     else
     {
         printf("\nConectado con exito al servidor...\n");
@@ -88,7 +88,7 @@ int main()
         }
         else
             printf("\nNo se recibio ningun mensaje del servidor.\n");
-    }//////////////////////////////////////////////////////////////////////
+    }
 
     //JUGADOR//
     jugador.vidas = config.vidasIniciales;
@@ -134,7 +134,9 @@ int main()
             if(Jugar(&laberinto, &jugador, fantasmas, config.maxFantasmas, &sdl, &cantMovimientos) != TODO_BIEN)
                 printf("\nSe produjo un error durante el juego.");
 
-    enviarDatosAlServidor(sock, jugador.nombre, jugador.puntaje, cantMovimientos);
+    if(cantMovimientos!=0)
+        enviarDatosAlServidor(sock, jugador.nombre, jugador.puntaje, cantMovimientos);
+    //Si cantMovimientos==0 significa que el jugador perdio y no se deben guardar sus datos
 
     send(sock, "FIN", 3, 0);
 
