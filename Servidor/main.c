@@ -72,6 +72,17 @@ int procesarYGuardarDatos(const char* buffer) {
         printf("Error: formato de mensaje invalido\n");
         return 0;
     }
+    if(nombre == NULL) {
+        printf("Error: nombre nulo\n");
+        return 0;
+    }
+    if(puntuacion < 0) {
+        printf("Error: puntuacion negativa\n");
+        return 0;
+    }
+    if(movimientos == 0) {
+        return 0; // No guardar si el jugador perdió
+    }
 
     // Preparar estructura DatosPartida
     strncpy(partida.nombre, nombre, MAX_NOMBRE - 1);
