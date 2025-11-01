@@ -615,14 +615,6 @@ int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFant
     musica = NULL;
     vaciarCola(&ColaMovimientos);
 
-    if(estado == VICTORIA)
-        victoria(sdl, fuenteLocal, jugador->puntaje);
-    else if(estado == DERROTA){
-        derrota(sdl, fuenteLocal);
-        *cantMovimientos = 0; //FLAG PARA DETECTAR QUE EL JUGADOR PERDIO
-    }
-        
-
     //Liberar la fuente HUD local si fue creada
     if (fuenteHudLocal && fuenteHudLocal != fuenteHudOriginal)
     {
@@ -630,7 +622,17 @@ int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFant
         fuenteHudLocal = NULL;
     }
 
-    return TODO_BIEN;
+
+    if(estado == VICTORIA)
+    {
+        victoria(sdl, fuenteLocal, jugador->puntaje);
+        return VICTORIA;
+    }
+        
+    else if(estado == DERROTA){
+        derrota(sdl, fuenteLocal);
+        return DERROTA;
+    }
 }
 
 int realizarMovimiento(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFantasmas, char direccion)
