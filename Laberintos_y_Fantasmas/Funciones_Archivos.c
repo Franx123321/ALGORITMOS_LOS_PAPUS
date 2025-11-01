@@ -53,6 +53,7 @@ int cargarDatosEnArch(FILE *pf, Jugador *j, const void *dato){
 
         user.p_total = j->puntaje;
         user.id_jugador++;
+        j->id = user.id_jugador;
 
         fseek(pf, 0, SEEK_END);
         fwrite(&user, sizeof(Usuario), 1, pf);
@@ -63,6 +64,7 @@ int cargarDatosEnArch(FILE *pf, Jugador *j, const void *dato){
     fread(&user, sizeof(Usuario), 1, pf);
 
     user.p_total += j->puntaje;
+    j->id = user.id_jugador;
 
     fseek(pf, cdato->offset - sizeof(Usuario), SEEK_SET);
     fwrite(&user, sizeof(Usuario), 1, pf);
@@ -100,48 +102,39 @@ int comparacionIndexes(const void *a, const void *b){
 // Partidas
 
 int almacenarPartida(Jugador *j, int cantmovimientos){
-    FILE *pf = fopen("partidas.dat", "a+b");
-    FILE *fi = fopen("indpartidas.idx", "a+b");
-    if(!pf || !fi){
+    FILE *pf = fopen("partidas.dat", "r+b");
+    if(!pf)
+        pf = fopen("partidas.dat", "w+b");
+    if(!pf){
         return ERROR_APERTURA;
     }
 
     Partida datos;
-    datos.cantidad_movimientos = cantmovimientos;
-    datos.id_usuario = j->id;
-    strcpy(datos.nombre, j->nombre);
-
-    Ind idx;
 
     fseek(pf, 0, SEEK_END);
     long registros = ftell(pf);
 
     if(registros == 0){
-        datos.id_partida = 0;
+        datos.id_partida = 0; //le asigno id 0 y le copio los datos del jugador actual
+        datos.cantidad_movimientos = cantmovimientos;
+        datos.id_usuario = j->id;
+        strcpy(datos.nombre, j->nombre);
 
-        idx.clave = datos.id_partida;
-        idx.offset = ftell(fi);
-
-        fwrite(&idx, sizeof(Ind), 1, fi);
-        fwrite(&datos, sizeof(Partida), 1, pf);
-        fclose(fi);
+        fwrite(&datos, sizeof(Partida), 1, pf); //lo escribo como nuevo registro
         fclose(pf);
         return TODO_BIEN;
     }
 
-    fseek(fi, -sizeof(Ind), SEEK_END);
-    fread(&idx, sizeof(Ind), 1, fi);
-    fseek(fi, 0, SEEK_END);
+    fseek(pf, -sizeof(Partida), SEEK_END); //miro el ultimo registro para calcular el nuevo id
+    fread(&datos, sizeof(Partida),1, pf); //lo almaceno en la variable datos
 
-    idx.clave++;
-    idx.offset = ftell(pf);
+    datos.id_partida++; //le creo el nuevo id y le coloco los datos del jugador actual
+    datos.id_usuario = j->id;
+    datos.cantidad_movimientos = cantmovimientos;
+    strcpy(datos.nombre, j->nombre);
 
-    datos.id_partida = idx.clave;
-
-    fwrite(&idx, sizeof(Ind), 1, fi);
     fwrite(&datos, sizeof(Partida), 1, pf);
     fclose(pf);
-    fclose(fi);
     return TODO_BIEN;
 }
 

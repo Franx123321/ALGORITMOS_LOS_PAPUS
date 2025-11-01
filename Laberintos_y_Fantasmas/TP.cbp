@@ -42,6 +42,10 @@
 			<Add library="SDL2_ttf" />
 			<Add directory="SDL2/lib" />
 		</Linker>
+		<Unit filename="Funciones_Archivos.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Funciones_Archivos.h" />
 		<Unit filename="Funciones_Generacion.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -60,6 +64,10 @@
 		<Unit filename="Funciones_Tablero.h" />
 		<Unit filename="Macros.h" />
 		<Unit filename="Macros_Estructuras.h" />
+		<Unit filename="arbol.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="arbol.h" />
 		<Unit filename="cola.c">
 			<Option compilerVar="CC" />
 		</Unit>

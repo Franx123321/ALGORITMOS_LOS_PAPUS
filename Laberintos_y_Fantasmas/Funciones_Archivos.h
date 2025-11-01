@@ -9,11 +9,6 @@ typedef struct{
 }Partida;
 
 typedef struct{
-    int clave;
-    long offset;
-}Ind;
-
-typedef struct{
     int id_jugador;
     char nombre[50];
     int p_total;
