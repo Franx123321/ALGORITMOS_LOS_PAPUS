@@ -115,10 +115,10 @@ int inicializarSDL(ContextoSDL *sdl, const Configuracion *config)
         SDL_Quit();
         return ERROR_SDL;
     }
-
+/*
     if(ancho > 0 && alto > 0)
         SDL_RenderSetLogicalSize(sdl->renderer, ancho, alto);
-
+*/
     SDL_RenderSetIntegerScale(sdl->renderer, SDL_FALSE);
     SDL_SetWindowMinimumSize(sdl->ventana, MIN_ANCHO, MIN_ALTO);
 

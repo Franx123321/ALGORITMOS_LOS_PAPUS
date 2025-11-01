@@ -451,7 +451,7 @@ int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFant
     char movimiento = 0, aseguradorMovimiento;
     int estado = 1, jugando = 1, tamCeldaReal, winW, winH,
         vpW, vpH, totalWidth, offsetX, tamFuenteHudDeseado;
-    float escalaX, escalaY, escala, escalaTexto = 1.0f;
+    float escalaX = 1, escalaY = 1, escala = 1, escalaTexto = 1.0f;
     TTF_Font *fuenteLocal = NULL;
     TTF_Font *fuenteHudOriginal = NULL;
     int tamFuenteHudActual = 0;
@@ -491,8 +491,9 @@ int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFant
                 jugando = 0;
             else if (evento.type == SDL_WINDOWEVENT && evento.window.event == SDL_WINDOWEVENT_RESIZED)
             {
-                winH = evento.window.data2;
-                escalaX = (float) winW / sdl->ancho;
+                sdl->ancho = evento.window.data1;
+                sdl->alto = evento.window.data2;
+                /*escalaX = (float) winW / sdl->ancho;
                 escalaY = (float) winH / sdl->alto;
                 escala = MIN(escalaX, escalaY);
                 if (escala <= 0.0f)
@@ -506,7 +507,7 @@ int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFant
                 vp.w = vpW;
                 vp.h = vpH;
 
-                SDL_RenderSetViewport(sdl->renderer, &vp);
+                SDL_RenderSetViewport(sdl->renderer, &vp);*/
             }
             else if(evento.type == SDL_KEYDOWN)
             {
@@ -570,16 +571,20 @@ int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFant
         SDL_SetRenderDrawColor(sdl->renderer, 0, 0, 0, 255);
         SDL_RenderClear(sdl->renderer);
 
+        /*
         tamCeldaReal = (sdl->ancho / laberinto->columnas);
         if (tamCeldaReal <= 0)
             tamCeldaReal = 1;
+        */
+
+        tamCeldaReal = TAM_CELDA;
 
         totalWidth = tamCeldaReal * laberinto->columnas;
         offsetX = (sdl->ancho - totalWidth) / 2;
         if (offsetX < 0)
             offsetX = 0;
 
-        tamFuenteHudDeseado = 35;
+        tamFuenteHudDeseado = 36;
 
         if (tamFuenteHudDeseado != tamFuenteHudActual)
         {

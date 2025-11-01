@@ -22,7 +22,7 @@
     #include <SDL.h>
     #include <SDL_ttf.h>
     #include <SDL_mixer.h>
-    
+
 #else
     // Linux (paquetes SDL2)
     #include <SDL2/SDL.h>
@@ -53,8 +53,8 @@
 #define DERROTA -1
 #define SALIR 0
 
-#define MIN_ANCHO 100
-#define MIN_ALTO 80
+#define MIN_ANCHO 480
+#define MIN_ALTO 480
 #define TAM_CELDA 24 //Tamaño en pixeles
 #define MARGEN 64    //Margen superior para el HUD
 
