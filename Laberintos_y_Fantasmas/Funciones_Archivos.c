@@ -36,9 +36,9 @@ int almacenarJugador(Jugador *j){
         return TODO_BIEN;
     }
 
-    cargarIndiceDesdeArchivo(&arbol, uf);
-    iuser = buscarEnArbol(&arbol, j->nombre, comparacionArbol);
-    cargarDatosEnArch(uf, j, (*iuser)->dato);
+    cargarIndiceDesdeArchivo(&arbol, uf); //si hay registros creo un ABB donde ordeno los datos por nombre
+    iuser = buscarEnArbol(&arbol, j->nombre, comparacionArbol); //busco el nombre del jugador actual en el arbol
+    cargarDatosEnArch(uf, j, (*iuser)->dato); //cargo los datos en el archivo, si lo encontro sobreescribo, sino creo nuevo registro
 
     fclose(uf);
     return TODO_BIEN;
@@ -133,7 +133,7 @@ int almacenarPartida(Jugador *j, int cantmovimientos){
     datos.cantidad_movimientos = cantmovimientos;
     strcpy(datos.nombre, j->nombre);
 
-    fwrite(&datos, sizeof(Partida), 1, pf);
+    fwrite(&datos, sizeof(Partida), 1, pf); // lo coloco al final
     fclose(pf);
     return TODO_BIEN;
 }
