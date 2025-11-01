@@ -25,6 +25,7 @@ son evidencias de mi lento descenso a la locura que me olvide de borrar */
 typedef struct {
     int id;
     char nombre[MAX_NOMBRE];
+    int puntuacion;
 } DatosJugador;
 
 typedef struct {
@@ -86,19 +87,25 @@ int procesarYGuardarDatos(const char* buffer) {
         archJugadores = fopen("Jugadores.dat", "w+b");
     }
     if(archJugadores) {
-        while(fread(&jugadorExistente, sizeof(DatosJugador), 1, archJugadores) == 1) {
+        while(fread(&jugadorExistente, sizeof(DatosJugador), 1, archJugadores) == 1) { //Leoo, 10, 20
             if(strcmp(jugadorExistente.nombre, nombre) == 0) {
                 encontrado = 1;
                 break;
             }
         }
-        if (!encontrado) {
+        if (encontrado==0) {
             // Agregar nuevo jugador
             strncpy(jugador.nombre, nombre, MAX_NOMBRE - 1);
             jugador.nombre[MAX_NOMBRE - 1] = '\0';
             jugador.id = (int)(ftell(archJugadores) / sizeof(DatosJugador)) + 1;
+            jugador.puntuacion = puntuacion;
             fseek(archJugadores, 0, SEEK_END);
             fwrite(&jugador, sizeof(DatosJugador), 1, archJugadores);
+        }
+        else if(encontrado==1){
+            jugador.puntuacion+=puntuacion;
+            fseek(archJugadores, -sizeof(DatosJugador), SEEK_CUR);
+            fwrite(&jugadorExistente, sizeof(DatosJugador), 1, archJugadores);
         }
         fflush(archJugadores);
         fclose(archJugadores);
