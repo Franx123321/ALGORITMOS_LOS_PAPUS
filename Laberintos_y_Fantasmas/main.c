@@ -21,7 +21,7 @@ int main()
     SOCKET sock; //No le puedo llamar socket porque asi se llama la funcion
     struct sockaddr_in dirServidor;
     char buffer[256];
-    int opMenu, bytesLeidos, cantMovimientos=0;
+    int opMenu, bytesLeidos, cantMovimientos=0, EstadoJuego;
 
     system("chcp 65001 > nul");
 
@@ -131,12 +131,11 @@ int main()
         destruir_matriz((void **)laberinto.celdas, laberinto.filas);
     else if(opMenu == 1)
         if (pantallaIngresarNombre(&sdl, sdl.fuente, &jugador) != SALIR)
-            if(Jugar(&laberinto, &jugador, fantasmas, config.maxFantasmas, &sdl, &cantMovimientos) != TODO_BIEN)
+            if((EstadoJuego=Jugar(&laberinto, &jugador, fantasmas, config.maxFantasmas, &sdl, &cantMovimientos)) == ERROR_MEMORIA)
                 printf("\nSe produjo un error durante el juego.");
 
-    if(cantMovimientos!=0)
+    if(EstadoJuego == VICTORIA)
         enviarDatosAlServidor(sock, jugador.nombre, jugador.puntaje, cantMovimientos);
-    //Si cantMovimientos==0 significa que el jugador perdio y no se deben guardar sus datos
 
     send(sock, "FIN", 3, 0);
 
