@@ -617,8 +617,11 @@ int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFant
 
     if(estado == VICTORIA)
         victoria(sdl, fuenteLocal, jugador->puntaje);
-    else if(estado == DERROTA)
+    else if(estado == DERROTA){
         derrota(sdl, fuenteLocal);
+        cantMovimientos = 0; //FLAG PARA DETECTAR QUE EL JUGADOR PERDIO
+    }
+        
 
     //Liberar la fuente HUD local si fue creada
     if (fuenteHudLocal && fuenteHudLocal != fuenteHudOriginal)
