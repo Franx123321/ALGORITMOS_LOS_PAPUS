@@ -6,7 +6,7 @@
 #include "Funciones_Generacion.h"
 #include "Funciones_Partida.h"
 
-//CONFIGURACION//
+//CONFIGURACION////
 int leerConfig(Configuracion *config); //Esta se queda en main porque no se donde mandarla
 
 
