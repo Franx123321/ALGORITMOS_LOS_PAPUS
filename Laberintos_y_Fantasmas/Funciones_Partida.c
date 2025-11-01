@@ -619,7 +619,7 @@ int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFant
         victoria(sdl, fuenteLocal, jugador->puntaje);
     else if(estado == DERROTA){
         derrota(sdl, fuenteLocal);
-        cantMovimientos = 0; //FLAG PARA DETECTAR QUE EL JUGADOR PERDIO
+        *cantMovimientos = 0; //FLAG PARA DETECTAR QUE EL JUGADOR PERDIO
     }
         
 
