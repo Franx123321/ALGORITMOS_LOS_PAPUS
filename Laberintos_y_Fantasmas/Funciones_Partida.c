@@ -448,6 +448,7 @@ int pantallaIngresarNombre(ContextoSDL *sdl, TTF_Font *fuente, Jugador *jugador)
 int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFantasmas,
             ContextoSDL *sdl, tCola *ColaMovimientos)
 {
+
     char movimiento = 0, aseguradorMovimiento;
     int estado = 1, jugando = 1, tamCeldaReal, winW, winH,
         vpW, vpH, totalWidth, offsetX, tamFuenteHudDeseado;
@@ -458,9 +459,16 @@ int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFant
     TTF_Font *fuenteHudLocal = NULL;
     SDL_Event evento;
     SDL_Rect vp;
+    Mix_Music *musica = NULL;
 
     if (!laberinto || !jugador || !fantasmas || !sdl || !ColaMovimientos)
         return ERROR_MEMORIA;
+
+    musica = Mix_LoadMUS("assets/plinplinplon.mp3");
+    if(!musica)
+        printf("\nERROR al cargar la musica: %s", Mix_GetError());
+    else if(Mix_PlayMusic(musica, -1) == -1)
+        printf("\nERROR al reproducir la musica: %s", Mix_GetError());
 
     SDL_GetWindowSize(sdl->ventana, &winW, &winH);
 
@@ -474,6 +482,7 @@ int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFant
         fuenteHudOriginal = sdl->fuenteHud;
     else
         fuenteHudOriginal = NULL;
+
 
     while(jugando && estado != VICTORIA)
     {
@@ -598,6 +607,10 @@ int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFant
 
         SDL_Delay(1000 / 60);
     }
+
+    Mix_HaltMusic();
+    Mix_FreeMusic(musica);
+    musica = NULL;
     almacenarJugador(jugador);
     almacenarPartida(jugador, cantmovimientos);
     if(estado == VICTORIA)
