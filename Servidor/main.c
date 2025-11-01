@@ -1,6 +1,6 @@
 /* Este codigo tiene muchos mas comentarios que el juego porque aca hay muchos conceptos nuevos
 que esta bueno explicar para que se entiendan .
-Nota para el profe: Pido disculpas si algun comentario queda fuera de lugar, 
+Nota para el profe: Pido disculpas si algun comentario queda fuera de lugar,
 son evidencias de mi lento descenso a la locura que me olvide de borrar */
 
 #include <stdio.h>
@@ -9,6 +9,9 @@ son evidencias de mi lento descenso a la locura que me olvide de borrar */
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <windows.h>
+#include "arbol.h"
+#include "Funciones_Archivos.h"
+#include "cola.h"
 #ifdef _MSC_VER
     #pragma comment(lib, "ws2_32.lib")
 #endif
@@ -17,29 +20,135 @@ son evidencias de mi lento descenso a la locura que me olvide de borrar */
 #define EN_ESPERA 5 //Cantidad de clientes en espera
 #define MAX_CLIENTES 5 //Maximo de clientes simultaneos
 #define TAM_BUFFER 256
+#define MAX_NOMBRE 50
 
 typedef struct{
     SOCKET sock;
     int *clientesConectados;
     HANDLE mutexClientes; //El que no entiende lo que es un mutex que curse Sistemas Operativos
+    tCola cola;
 }DatosCliente;
 
 DWORD WINAPI atenderCliente(LPVOID arg);
-/* 
+/*
     1. DWORD es el valor de retorno que pide la API de threads de Windows, se usa en createThread
     2. WINAPI es una convencion de llamadas de Windows
-    3. LPVOID es un typedef para void*, se usa en su lugar porque algunas estructuras de 
-       threads estan definidas con LPVOID y en casos raros C se enoja si el tipo no coincide 
+    3. LPVOID es un typedef para void*, se usa en su lugar porque algunas estructuras de
+       threads estan definidas con LPVOID y en casos raros C se enoja si el tipo no coincide
        exactamente en nombre
 */
+
+HANDLE hArchivoMutex = NULL;
+
+int procesarYGuardarDatos(const char* buffer) {
+    char nombre[MAX_NOMBRE];
+    int puntuacion, movimientos;
+    Partida partida;
+    Jugador jugador, jugadorExistente;
+    FILE *archPartida, *archJugadores;
+    long pos;
+    int resultado = 0, encontrado = 0;
+
+    if(sscanf(buffer, "%[^|]|%d|%d", nombre, &puntuacion,&movimientos) != 3) {
+        printf("Error: formato de mensaje invalido\n");
+        return 0;
+    }
+    if(nombre[0] == '\0') {
+        printf("Error: nombre nulo\n");
+        return 0;
+    }
+    if(puntuacion < 0 || movimientos < 0) {
+        printf("Error: puntuacion o movimientos invalidos\n");
+        return 0;
+    }
+
+    // Preparar estructura Partida
+    strncpy(partida.nombre, nombre, MAX_NOMBRE - 1);
+    partida.nombre[MAX_NOMBRE - 1] = '\0';
+    partida.cantidad_movimientos = movimientos;
+
+    //Preparar estrucura Jugador
+    strncpy(jugador.nombre, nombre, MAX_NOMBRE - 1);
+    jugador.nombre[MAX_NOMBRE - 1] = '\0';
+    jugador.puntaje = puntuacion;
+    // Proteger acceso al archivo
+    WaitForSingleObject(hArchivoMutex, INFINITE);
+
+    //DESCOMENTAR LA PARTE SIGUIENTE PARA ALMACENAR EN ARCHIVOS USANDO MIS FUNCIONES
+
+    /* 
+    resultado = almacenarJugador(&jugador);
+    if(!resultado){
+        return 0;
+    }
+    resultado = almacenarPartida(&jugador, movimientos);
+    if(!resultado){
+        return 0;
+    }*/
+
+    // DESCOMENTAR LA PARTE SIGUIENTE PARA ALMACENAR EN ARCHIVOS USANDO LAS FUNCIONES DE LEO
+
+    /*
+    archJugadores = fopen("Jugadores.dat", "r+b");
+    if (!archJugadores) {
+        archJugadores = fopen("Jugadores.dat", "w+b");
+    }
+    if(archJugadores) {
+        while(fread(&jugadorExistente, sizeof(Jugador), 1, archJugadores) == 1) { //Leoo, 10, 20
+            if(strcmp(jugadorExistente.nombre, nombre) == 0) {
+                encontrado = 1;
+                break;
+            }
+        }
+        if (encontrado==0) {
+            // Agregar nuevo jugador
+            strncpy(jugador.nombre, nombre, MAX_NOMBRE - 1);
+            jugador.nombre[MAX_NOMBRE - 1] = '\0';
+            jugador.id = (int)(ftell(archJugadores) / sizeof(Jugador)) + 1;
+            jugador.puntaje = puntuacion;
+            fseek(archJugadores, 0, SEEK_END);
+            fwrite(&jugador, sizeof(Jugador), 1, archJugadores);
+        }
+        else if(encontrado==1){
+            jugadorExistente.puntaje+=puntuacion;
+            fseek(archJugadores,(int)((-1)*sizeof(Jugador)), SEEK_CUR);
+            fwrite(&jugadorExistente, sizeof(Jugador), 1, archJugadores);
+        }
+        fflush(archJugadores);
+        fclose(archJugadores);
+    } else {
+        printf("Error al abrir jugadores.dat\n");
+    }
+
+    archPartida = fopen("Partidas.dat", "ab");
+    if(archPartida) {
+        fseek(archPartida, 0, SEEK_END);
+        pos = ftell(archPartida);
+        partida.id_partida = (int)(pos / sizeof(Partida)) + 1;
+
+        if(fwrite(&partida, sizeof(Partida), 1, archPartida) == 1) {
+            printf("Datos guardados: Jugador=%s, ID=%d, Movimientos=%d\n",
+                   partida.nombre, partida.id_partida, partida.cantidad_movimientos);
+            resultado = 1;
+        }
+
+        fflush(archPartida);
+        fclose(archPartida);
+    } else {
+        printf("Error al abrir partidas.dat\n");
+    }*/
+
+    ReleaseMutex(hArchivoMutex);
+    return 1;
+}
 
 
 int main()
 {
     WSADATA wsaData;  //Muy resumidamente, WSADATA es una struct de Windows que sirve para inicializar el sistema de sockets, es exclusivo de Windows
-    SOCKET socketServidor = INVALID_SOCKET, 
+    SOCKET socketServidor = INVALID_SOCKET,
            socketCliente = INVALID_SOCKET; //Creo que el tipo de dato explica bastante bien que es esto
-    HANDLE mutexClientes = NULL, 
+    HANDLE mutexClientes = NULL,
            threadCliente = NULL;
     struct sockaddr_in dirServidor, dirCliente; //Direcciones de sockets
     int tamDirCliente, clientesConectados = 0;
@@ -81,7 +190,7 @@ int main()
     //Se pone el socket en modo escucha
     if(listen(socketServidor, EN_ESPERA) == SOCKET_ERROR)
     {
-        printf("\nERROR al poner el socket en modo escucha. Codigo: %d\n", WSAGetLastError()); 
+        printf("\nERROR al poner el socket en modo escucha. Codigo: %d\n", WSAGetLastError());
         closesocket(socketServidor);
         WSACleanup();
         exit(1);
@@ -89,12 +198,24 @@ int main()
 
     printf("\nServidor escuchando en puerto %d...\n", PUERTO);
 
-    /*Si llego bien hasta aca, creamos mutex, el mutex sirve para sincronizar acceso al 
+    /*Si llego bien hasta aca, creamos mutex, el mutex sirve para sincronizar acceso al
     contador de clientes (se evita la condicion de carrera)*/
     mutexClientes = CreateMutex(NULL, FALSE, NULL);
     if(mutexClientes == NULL)
     {
         printf("\nERROR al crear el mutex.");
+        closesocket(socketServidor);
+        WSACleanup();
+        exit(1);
+    }
+
+        // Crear mutex para proteger accesos al archivo partidas.dat
+    hArchivoMutex = CreateMutex(NULL, FALSE, NULL);
+
+    if(hArchivoMutex == NULL)
+    {
+        printf("\nERROR al crear el mutex de archivo.");
+        CloseHandle(mutexClientes);
         closesocket(socketServidor);
         WSACleanup();
         exit(1);
@@ -124,7 +245,7 @@ int main()
         }
 
         ReleaseMutex(mutexClientes);
-        
+
         printf("\nCliente conectado desde %s: %d\n", inet_ntoa(dirCliente.sin_addr), ntohs(dirCliente.sin_port));
 
         datos = (DatosCliente*)malloc(sizeof(DatosCliente));
@@ -154,6 +275,7 @@ int main()
 
     CloseHandle(mutexClientes);
     closesocket(socketServidor);
+    CloseHandle(hArchivoMutex);
     WSACleanup();
 
     return 0;
@@ -168,7 +290,11 @@ DWORD WINAPI atenderCliente(LPVOID arg)
     SOCKET cliente = datos->sock;
     char buffer[TAM_BUFFER],
          *bienvenida = "Bienvenido al servidor de Laberintos y Fantasmas!\n";
-    int bytes;
+    int bytes, cantmovrecv;
+    Jugador jugador;
+    char mensaje[TAM_BUFFER];
+
+    crearCola(&datos->cola);
 
     WaitForSingleObject(datos->mutexClientes, INFINITE);
     (*datos->clientesConectados)++;
@@ -180,6 +306,7 @@ DWORD WINAPI atenderCliente(LPVOID arg)
     while(1)
     {
         bytes = recv(cliente, buffer, sizeof(buffer) - 1, 0);
+
         if(bytes > 0)
         {
             buffer[bytes] = '\0';
@@ -191,7 +318,25 @@ DWORD WINAPI atenderCliente(LPVOID arg)
                 break;
             }
             //Aca irian las demas opciones para mas adelante, tal vez un "ver ranking"
+
+            // Encolar el mensaje
+            if(encolar(&datos->cola, buffer, strlen(buffer) + 1)) {
+                // Procesar todos los mensajes en la cola
+                while(!colaVacia(&datos->cola)) {
+                    if(desencolar(&datos->cola, mensaje, TAM_BUFFER)) {
+                        if(procesarYGuardarDatos(mensaje)) {
+                            printf("Mensaje procesado exitosamente\n");
+                        } else {
+                            printf("Error al procesar mensaje\n");
+                        }
+                    }
+                }
+            } else {
+                printf("Error al encolar mensaje\n");
+            }
         }
+
+
         else if(bytes == 0)
         {
             printf("\nEl cliente cerro la conexion.\n");
@@ -202,15 +347,15 @@ DWORD WINAPI atenderCliente(LPVOID arg)
             printf("\nError al recibir mensajes del cliente. Codigo: %d\n", WSAGetLastError());
             break;
         }
-    }   
+    }
 
     closesocket(cliente);
 
     WaitForSingleObject(datos->mutexClientes, INFINITE);
     (*datos->clientesConectados)--;
     printf("\nCliente desconectado.\n\nQuedan conectados: %d\n", *datos->clientesConectados);
-    ReleaseMutex(datos->mutexClientes); 
+    ReleaseMutex(datos->mutexClientes);
 
     free(datos);
     return 0;
-} 
+}

@@ -1,5 +1,4 @@
 #include "Funciones_Partida.h"
-#include "Funciones_Archivos.h"
 
 //Se usa un algoritmo BFS, que basicamente busca la ruta mas corta hacia el jugador. Posiblemente lo explique
 //mas detallado en el readme, pero como estoy por caer en la demencia, puede ser que me haya olvidado
@@ -428,7 +427,8 @@ int pantallaIngresarNombre(ContextoSDL *sdl, TTF_Font *fuente, Jugador *jugador)
             }
             else if (evento.type == SDL_TEXTINPUT)
             {
-                strncat(nombre, evento.text.text, 50 - strlen(nombre));
+                //strncat(nombre, evento.text.text, 50 - strlen(nombre));
+                strncat(nombre, evento.text.text, 50 - strlen(nombre) - 1);
                 noNombre = 0;
                 actualizar = 1;
             }
@@ -437,7 +437,10 @@ int pantallaIngresarNombre(ContextoSDL *sdl, TTF_Font *fuente, Jugador *jugador)
         SDL_Delay(16);
     }
 
-    strcpy(jugador->nombre, nombre);
+    //strcpy(jugador->nombre, nombre);
+    strncpy(jugador->nombre, nombre, sizeof(jugador->nombre) - 1);
+    jugador->nombre[sizeof(jugador->nombre) - 1] = '\0';
+
 
     SDL_DestroyTexture(texTitulo);
     SDL_DestroyTexture(texDescripcion);
@@ -446,7 +449,7 @@ int pantallaIngresarNombre(ContextoSDL *sdl, TTF_Font *fuente, Jugador *jugador)
 }
 
 int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFantasmas,
-            ContextoSDL *sdl, tCola *ColaMovimientos)
+            ContextoSDL *sdl, tCola *ColaMovimientos, int *cantmovimientos)
 {
 
     char movimiento = 0, aseguradorMovimiento;
@@ -455,7 +458,7 @@ int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFant
     float escalaX, escalaY, escala, escalaTexto = 1.0f;
     TTF_Font *fuenteLocal = NULL;
     TTF_Font *fuenteHudOriginal = NULL;
-    int tamFuenteHudActual = 0, cantmovimientos=0;
+    int tamFuenteHudActual = 0;
     TTF_Font *fuenteHudLocal = NULL;
     SDL_Event evento;
     SDL_Rect vp;
@@ -554,7 +557,7 @@ int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFant
                 if(jugando && desencolar(ColaMovimientos, &aseguradorMovimiento, sizeof(char)))
                 {
                     estado = realizarMovimiento(laberinto, jugador, fantasmas, maxFantasmas, aseguradorMovimiento);
-                    cantmovimientos++;
+                    (*cantmovimientos)++;
                     if(estado == DERROTA)
                         jugando = 0;
                     if(estado != MOV_INVALIDO)
@@ -611,8 +614,8 @@ int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFant
     Mix_HaltMusic();
     Mix_FreeMusic(musica);
     musica = NULL;
-    almacenarJugador(jugador);
-    almacenarPartida(jugador, cantmovimientos);
+    //almacenarJugador(jugador);
+    //almacenarPartida(jugador, cantmovimientos);
     if(estado == VICTORIA)
         victoria(sdl, fuenteLocal, jugador->puntaje);
     else if(estado == DERROTA)
@@ -625,7 +628,7 @@ int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFant
         fuenteHudLocal = NULL;
     }
 
-    return TODO_BIEN;
+    return estado;
 }
 
 int realizarMovimiento(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFantasmas, char direccion)

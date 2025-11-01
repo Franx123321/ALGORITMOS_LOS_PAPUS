@@ -10,12 +10,12 @@
 int menu(SDL_Renderer *renderer, TTF_Font *fuente, int ancho, int alto);
 int pantallaIngresarNombre(ContextoSDL *sdl, TTF_Font *fuente, Jugador *jugador);
 int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFantasmas,
-            ContextoSDL *sdl, tCola *ColaMovimientos);
+            ContextoSDL *sdl, tCola *ColaMovimientos, int *cantmovimientos);
 int moverFantasmas(Tablero *laberinto, Fantasma *fantasmas, Jugador *jugador, int maxFantasmas);
 int encontrarFantasma(Fantasma *fantasmas, int maxFantasmas, int x, int y);
 int realizarMovimiento(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFantasmas, char direccion);
 void victoria(ContextoSDL *sdl, TTF_Font *fuente, int puntaje);
 void derrota(ContextoSDL *sdl, TTF_Font *fuente);
-
+int enviarDatosAlServidor(SOCKET sock, const char* nombre, int puntuacion, int cantMovimientos);
 
 #endif // FUNCIONES_PARTIDA_H_INCLUDED

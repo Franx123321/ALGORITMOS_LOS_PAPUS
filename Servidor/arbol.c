@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include "arbol.h"
 
 void crearArbol(tArbolBinBusq *p){
@@ -52,3 +53,61 @@ tNodoArbol **buscarEnArbol(tArbolBinBusq *p, const char *nombre, int (*comp) (co
         return buscarEnArbol(&(*p)->izq, nombre, comp);
 }
 
+int alturaArbolBin(tArbolBinBusq *p){
+    int ai = 0, ad = 0;
+
+    if(!*p)
+        return 0;
+
+    ai = alturaArbolBin(&(*p)->izq);
+    ad = alturaArbolBin(&(*p)->der);
+    return (ai > ad ? ai : ad) + 1;
+}
+
+tNodoArbol **mayorNodoArbolBinBusq(tArbolBinBusq *p){
+    if(!*p)
+        return NULL;
+
+    while((*p)->der){
+        p = &(*p)->der;
+    }
+
+    return (tNodoArbol **)p;
+}
+
+int eliminarRaizArbolBinBusq(tArbolBinBusq *p){
+    tNodoArbol **remp, *elim;
+
+    if(!*p)
+        return 0;
+
+    free((*p)->dato);
+    if((*p)->der == (*p)->izq == NULL){
+        free(*p);
+        *p = NULL;
+        return 1;
+    }
+
+    remp = alturaArbolBin(&(*p)->izq) > alturaArbolBin(&(*p)->der) ? mayorNodoArbolBinBusq(&(*p)->izq) : mayorNodoArbolBinBusq(&(*p)->der);
+
+    elim = *remp;
+    (*p)->dato = elim->dato;
+    (*p)->tamDato = elim->tamDato;
+
+    *remp = elim->izq ? elim->izq : elim->der;
+
+    free(elim);
+
+    return 1;
+}
+
+void destruirArbol(tArbolBinBusq *p){
+    if(!*p)
+        return;
+    
+    destruirArbol(&(*p)->izq);
+    destruirArbol(&(*p)->der);
+    free((*p)->dato);
+    free(*p);
+    *p = NULL;
+}

@@ -6,6 +6,8 @@
 #include "Funciones_Generacion.h"
 #include "Funciones_Partida.h"
 
+#define ERROR_ENVIO 0
+
 //CONFIGURACION//
 int leerConfig(Configuracion *config); //Esta se queda en main porque no se donde mandarla
 
@@ -22,7 +24,8 @@ int main()
     SOCKET sock; //No le puedo llamar socket porque asi se llama la funcion
     struct sockaddr_in dirServidor;
     char buffer[256];
-    int opMenu, bytesLeidos;
+    int opMenu, bytesLeidos, EstadoJuego;
+    int cantmovimientos = 0;
 
     system("chcp 65001 > nul");
 
@@ -34,7 +37,7 @@ int main()
         printf("\nERROR al leer el archivo de configuración.");
         exit(1);
     }
-    
+
     fantasmas = malloc(config.maxFantasmas * sizeof(Fantasma));
     if(!fantasmas)
     {
@@ -131,8 +134,12 @@ int main()
         destruir_matriz((void **)laberinto.celdas, laberinto.filas);
     else if(opMenu == 1)
         if (pantallaIngresarNombre(&sdl, sdl.fuente, &jugador) != SALIR)
-            if(Jugar(&laberinto, &jugador, fantasmas, config.maxFantasmas, &sdl, &ColaMovimientos) != TODO_BIEN)
+            EstadoJuego = Jugar(&laberinto, &jugador, fantasmas, config.maxFantasmas, &sdl, &ColaMovimientos, &cantmovimientos);
+            if(EstadoJuego != VICTORIA && EstadoJuego != DERROTA)
                 printf("\nSe produjo un error durante el juego.");
+
+    if(EstadoJuego == VICTORIA)
+        enviarDatosAlServidor(sock, jugador.nombre, jugador.puntaje, cantmovimientos);
 
     send(sock, "FIN", 3, 0);
 
@@ -150,6 +157,25 @@ int main()
 }
 
 
+int enviarDatosAlServidor(SOCKET sock, const char* nombre, int puntuacion, int cantMovimientos)
+{
+    printf("\nEnviando datos al servidor...");
+    char buffer[1024];
+    if (sock == INVALID_SOCKET || !nombre){
+        printf("\nError: Socket invalido o nombre nulo.");
+        return ERROR_MEMORIA;
+    }//
+
+    sprintf(buffer, "%s|%d|%d", nombre, puntuacion, cantMovimientos);
+    if(send(sock, buffer, strlen(buffer), 0) == SOCKET_ERROR){
+        printf("\nError al enviar los datos al servidor.");
+        return ERROR_ENVIO;
+    }
+
+
+    printf("\nDatos enviados correctamente.");
+    return TODO_BIEN;
+}
 
 //CONFIGURACION//
 int leerConfig(Configuracion *config)

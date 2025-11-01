@@ -1,5 +1,10 @@
-#include "Macros.h"
 #include "arbol.h"
+
+typedef struct{
+    char nombre[50];
+    int puntaje;
+    int id;
+}Jugador;
 
 typedef struct{
     int id_partida;
@@ -25,3 +30,4 @@ void cargarIndiceDesdeArchivo(tArbolBinBusq *p, FILE *pf);
 int comparacionArbol(const void *a, const void *b);
 int comparacionIndexes(const void *a, const void *b);
 int cargarDatosEnArch(FILE *pf, Jugador *j, const void *dato);
+int procesarYGuardarDatos(const char* buffer);
