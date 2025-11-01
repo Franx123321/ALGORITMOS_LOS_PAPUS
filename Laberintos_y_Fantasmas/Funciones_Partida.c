@@ -1,4 +1,5 @@
 #include "Funciones_Partida.h"
+#include "Funciones_Archivos.h"
 
 //Se usa un algoritmo BFS, que basicamente busca la ruta mas corta hacia el jugador. Posiblemente lo explique
 //mas detallado en el readme, pero como estoy por caer en la demencia, puede ser que me haya olvidado
@@ -453,7 +454,7 @@ int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFant
     float escalaX, escalaY, escala, escalaTexto = 1.0f;
     TTF_Font *fuenteLocal = NULL;
     TTF_Font *fuenteHudOriginal = NULL;
-    int tamFuenteHudActual = 0;
+    int tamFuenteHudActual = 0, cantmovimientos=0;
     TTF_Font *fuenteHudLocal = NULL;
     SDL_Event evento;
     SDL_Rect vp;
@@ -544,6 +545,7 @@ int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFant
                 if(jugando && desencolar(ColaMovimientos, &aseguradorMovimiento, sizeof(char)))
                 {
                     estado = realizarMovimiento(laberinto, jugador, fantasmas, maxFantasmas, aseguradorMovimiento);
+                    cantmovimientos++;
                     if(estado == DERROTA)
                         jugando = 0;
                     if(estado != MOV_INVALIDO)
@@ -596,7 +598,8 @@ int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFant
 
         SDL_Delay(1000 / 60);
     }
-
+    almacenarJugador(jugador);
+    almacenarPartida(jugador, cantmovimientos);
     if(estado == VICTORIA)
         victoria(sdl, fuenteLocal, jugador->puntaje);
     else if(estado == DERROTA)

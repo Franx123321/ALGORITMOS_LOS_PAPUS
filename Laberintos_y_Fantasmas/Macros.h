@@ -79,6 +79,7 @@ typedef struct{
     int puntaje;
     int posX;
     int posY;
+    int id;
 }Jugador;
 
 typedef struct{
