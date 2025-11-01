@@ -16,14 +16,18 @@
     // Windows (MinGW / MSVC)
     #include <SDL2/SDL.h>
     #include <SDL2/SDL_ttf.h>
+    #include <SDL2/SDL_mixer.h>
 #elif __APPLE__
     // macOS (Frameworks)
     #include <SDL.h>
     #include <SDL_ttf.h>
+    #include <SDL_mixer.h>
+    
 #else
     // Linux (paquetes SDL2)
     #include <SDL2/SDL.h>
     #include <SDL2/SDL_ttf.h>
+    #include <SDL2/SDL_mixer.h>
 #endif
 
 #ifdef WIN_32

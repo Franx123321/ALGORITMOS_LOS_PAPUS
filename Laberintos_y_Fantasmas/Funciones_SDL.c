@@ -4,7 +4,7 @@
 int inicializarSDL(ContextoSDL *sdl, const Configuracion *config)
 {
     float escalaX, escalaY, escala;
-    int ancho, alto, base, tamMedio;
+    int ancho, alto, base, tamMedio, flags, inicializado;
     SDL_Surface *surSprites;
     SDL_RWops *streamSprites;
 
@@ -90,6 +90,32 @@ int inicializarSDL(ContextoSDL *sdl, const Configuracion *config)
     sdl->sprites = SDL_CreateTextureFromSurface(sdl->renderer, surSprites);
     SDL_FreeSurface(surSprites);
 
+    flags = MIX_INIT_MP3 | MIX_INIT_OGG;
+    inicializado = Mix_Init(flags);
+
+    if((inicializado & flags) != flags)
+    {
+        printf("\nERROR al inicializar SDL_mixer: %s",Mix_GetError());
+        SDL_DestroyTexture(sdl->sprites);
+        SDL_DestroyRenderer(sdl->renderer);
+        SDL_DestroyWindow(sdl->ventana);
+        TTF_Quit();
+        SDL_Quit();
+        return ERROR_SDL;
+    }
+
+    if(Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) == -1)
+    {
+        printf("\nERROR al inicializar el audio: %s",Mix_GetError());
+        Mix_Quit();
+        SDL_DestroyTexture(sdl->sprites);
+        SDL_DestroyRenderer(sdl->renderer);
+        SDL_DestroyWindow(sdl->ventana);
+        TTF_Quit();
+        SDL_Quit();
+        return ERROR_SDL;
+    }
+
     if(ancho > 0 && alto > 0)
         SDL_RenderSetLogicalSize(sdl->renderer, ancho, alto);
 
@@ -119,10 +145,11 @@ int inicializarSDL(ContextoSDL *sdl, const Configuracion *config)
     if(!sdl->fuente)
     {
         printf("\nERROR al cargar una fuente: %s", TTF_GetError());
-
+        Mix_CloseAudio();
         SDL_DestroyTexture(sdl->sprites);
         SDL_DestroyRenderer(sdl->renderer);
         SDL_DestroyWindow(sdl->ventana);
+        Mix_Quit();
         TTF_Quit();
         SDL_Quit();
         return ERROR_SDL;
@@ -136,9 +163,11 @@ int inicializarSDL(ContextoSDL *sdl, const Configuracion *config)
         TTF_CloseFont(sdl->fuente);
         sdl->fuente = NULL;
 
+        Mix_CloseAudio();
         SDL_DestroyTexture(sdl->sprites);
         SDL_DestroyRenderer(sdl->renderer);
         SDL_DestroyWindow(sdl->ventana);
+        Mix_Quit();
         TTF_Quit();
         SDL_Quit();
         return ERROR_SDL;
@@ -284,6 +313,8 @@ void destruirSDL(ContextoSDL *sdl)
         sdl->ventana = NULL;
     }
 
+    Mix_CloseAudio();
+    Mix_Quit();
     TTF_Quit();
     SDL_Quit();
 }
