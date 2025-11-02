@@ -39,18 +39,18 @@ int insertarEnArbolOrdenado(tArbolBinBusq *p, void *dato, unsigned tam, int (*cm
     return 1;
 }
 
-tNodoArbol **buscarEnArbol(tArbolBinBusq *p, const char *nombre, int (*comp) (const void *, const void *)) {
+tNodoArbol **buscarEnArbol(tArbolBinBusq *p, const void *dato, int (*comp) (const void *, const void *)) {
     if (!*p)
         return NULL;
 
-    int cmp = comp((*p)->dato, nombre);
+    int cmp = comp((*p)->dato, dato);
 
     if (cmp == 0)
         return p;
     else if (cmp < 0)
-        return buscarEnArbol(&(*p)->der, nombre, comp);
+        return buscarEnArbol(&(*p)->der, dato, comp);
     else
-        return buscarEnArbol(&(*p)->izq, nombre, comp);
+        return buscarEnArbol(&(*p)->izq, dato, comp);
 }
 
 int alturaArbolBin(tArbolBinBusq *p){

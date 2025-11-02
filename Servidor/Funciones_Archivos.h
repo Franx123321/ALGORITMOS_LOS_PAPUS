@@ -7,15 +7,15 @@ typedef struct{
 }Jugador;
 
 typedef struct{
-    int id_partida;
     char nombre[50];
+    int id_partida;
     int id_usuario;
     int cantidad_movimientos;
 }Partida;
 
 typedef struct{
-    int id_jugador;
     char nombre[50];
+    int id_jugador;
     int p_total;
 }Usuario;
 
