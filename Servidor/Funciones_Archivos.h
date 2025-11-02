@@ -2,6 +2,7 @@
 #define FUNCIONES_ARCHIVOS_H_INCLUDED
 
 #include "main.h"
+#include "arbol_bin_busq.h"
 
 typedef struct {
     int id;

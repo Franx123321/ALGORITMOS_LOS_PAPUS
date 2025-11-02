@@ -41,6 +41,10 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="Funciones_Archivos.h" />
+		<Unit filename="arbol_bin_busq.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="arbol_bin_busq.h" />
 		<Unit filename="cola.c">
 			<Option compilerVar="CC" />
 		</Unit>
