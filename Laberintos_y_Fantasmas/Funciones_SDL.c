@@ -14,18 +14,8 @@ int inicializarSDL(ContextoSDL *sdl, const Configuracion *config)
         return ERROR_SDL;
     }
 
-    ancho = config->columnas * TAM_CELDA;
-    alto = config->filas * TAM_CELDA + MARGEN;
-
-    if (ancho < MIN_ANCHO || alto < MIN_ALTO)
-    {
-        escalaX = (float) MIN_ANCHO / (float) ancho;
-        escalaY = (float) MIN_ALTO / (float) alto;
-        escala = MAX(escalaX, escalaY);
-
-        ancho = (int) (ancho * escala);
-        alto = (int) (alto * escala);
-    }
+    ancho = MAX(INI_ANCHO, config->columnas * TAM_CELDA);
+    alto = MAX(INI_ALTO, config->filas * TAM_CELDA + MARGEN);
 
     if (SDL_Init(SDL_INIT_VIDEO) < 0)
     {
