@@ -3,44 +3,8 @@ que esta bueno explicar para que se entiendan .
 Nota para el profe: Pido disculpas si algun comentario queda fuera de lugar,
 son evidencias de mi lento descenso a la locura que me olvide de borrar */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <winsock2.h>
-#include <ws2tcpip.h>
-#include <windows.h>
-
-#include "cola.h" //Incluyo la cola para manejar mensajes de clientes
-
-#ifdef _MSC_VER
-    #pragma comment(lib, "ws2_32.lib")
-#endif
-
-#define PUERTO 7777
-#define EN_ESPERA 5 //Cantidad de clientes en espera
-#define MAX_CLIENTES 5 //Maximo de clientes simultaneos
-#define TAM_BUFFER 256
-#define MAX_NOMBRE 50
-
-typedef struct {
-    int id;
-    char nombre[MAX_NOMBRE];
-    int puntuacion;
-} DatosJugador;
-
-typedef struct {
-    int id;
-    char nombre[MAX_NOMBRE];
-    int puntuacion;
-    int movimientos;
-} DatosPartida;
-
-typedef struct{
-    SOCKET sock;
-    int *clientesConectados;
-    HANDLE mutexClientes;
-    tCola cola;  // Cola para las peticiones del cliente
-}DatosCliente;
+#include "main.h" //
+#include "Funciones_Archivos.h"
 
 // Mutex global para sincronizar acceso al archivo partidas.dat
 HANDLE hArchivoMutex = NULL;
@@ -59,89 +23,6 @@ int procesarYGuardarDatos(const char* buffer);
 */
 
 
-int procesarYGuardarDatos(const char* buffer) {
-    char nombre[MAX_NOMBRE];
-    int puntuacion, movimientos;
-    DatosPartida partida;
-    DatosJugador jugador, jugadorExistente;
-    FILE *archPartida, *archJugadores;
-    long pos;
-    int resultado = 0, encontrado = 0;
-
-    if(sscanf(buffer, "%[^|]|%d|%d", nombre, &puntuacion, &movimientos) != 3) {
-        printf("Error: formato de mensaje invalido\n");
-        return 0;
-    }
-    if(nombre == NULL) {
-        printf("Error: nombre nulo\n");
-        return 0;
-    }
-    if(puntuacion < 0 || movimientos < 0) {
-        printf("Error: puntuacion o movimientos invalidos\n");
-        return 0;
-    }
-
-    // Preparar estructura DatosPartida
-    strncpy(partida.nombre, nombre, MAX_NOMBRE - 1);
-    partida.nombre[MAX_NOMBRE - 1] = '\0';
-    partida.puntuacion = puntuacion;
-    partida.movimientos = movimientos;
-
-    // Proteger acceso al archivo
-    WaitForSingleObject(hArchivoMutex, INFINITE);
-
-    archJugadores = fopen("Jugadores.dat", "r+b");
-    if (!archJugadores) {
-        archJugadores = fopen("Jugadores.dat", "w+b");
-    }
-    if(archJugadores) {
-        while(fread(&jugadorExistente, sizeof(DatosJugador), 1, archJugadores) == 1) { //Leoo, 10, 20
-            if(strcmp(jugadorExistente.nombre, nombre) == 0) {
-                encontrado = 1;
-                break;
-            }
-        }
-        if (encontrado==0) {
-            // Agregar nuevo jugador
-            strncpy(jugador.nombre, nombre, MAX_NOMBRE - 1);
-            jugador.nombre[MAX_NOMBRE - 1] = '\0';
-            jugador.id = (int)(ftell(archJugadores) / sizeof(DatosJugador)) + 1;
-            jugador.puntuacion = puntuacion;
-            fseek(archJugadores, 0, SEEK_END);
-            fwrite(&jugador, sizeof(DatosJugador), 1, archJugadores);
-        }
-        else if(encontrado==1){
-            jugadorExistente.puntuacion+=puntuacion;
-            fseek(archJugadores,(int)((-1)*sizeof(DatosJugador)), SEEK_CUR);
-            fwrite(&jugadorExistente, sizeof(DatosJugador), 1, archJugadores);
-        }
-        fflush(archJugadores);
-        fclose(archJugadores);
-    } else {
-        printf("Error al abrir jugadores.dat\n");
-    }
-
-    archPartida = fopen("Partidas.dat", "ab");
-    if(archPartida) {
-        fseek(archPartida, 0, SEEK_END);
-        pos = ftell(archPartida);
-        partida.id = (int)(pos / sizeof(DatosPartida)) + 1;
-
-        if(fwrite(&partida, sizeof(DatosPartida), 1, archPartida) == 1) {
-            printf("Datos guardados: Jugador=%s, ID=%d, Puntuacion=%d, Movimientos=%d\n",
-                   partida.nombre, partida.id, partida.puntuacion, partida.movimientos);
-            resultado = 1;
-        }
-
-        fflush(archPartida);
-        fclose(archPartida);
-    } else {
-        printf("Error al abrir partidas.dat\n");
-    }
-
-    ReleaseMutex(hArchivoMutex);
-    return resultado;
-}
 
 
 int main()
@@ -326,7 +207,7 @@ DWORD WINAPI atenderCliente(LPVOID arg)
                 // Procesar todos los mensajes en la cola
                 while(!colaVacia(&datos->cola)) {
                     if(desencolar(&datos->cola, mensaje, TAM_BUFFER)) {
-                        if(procesarYGuardarDatos(mensaje)) {
+                        if(procesarYGuardarDatos(mensaje, &hArchivoMutex)) {
                             printf("Mensaje procesado exitosamente\n");
                         } else {
                             printf("Error al procesar mensaje\n");
