@@ -134,9 +134,11 @@ int main()
         destruir_matriz((void **)laberinto.celdas, laberinto.filas);
     else if(opMenu == 1)
         if (pantallaIngresarNombre(&sdl, sdl.fuente, &jugador) != SALIR)
+        {
             EstadoJuego = Jugar(&laberinto, &jugador, fantasmas, config.maxFantasmas, &sdl, &ColaMovimientos, &cantmovimientos);
             if(EstadoJuego != VICTORIA && EstadoJuego != DERROTA)
                 printf("\nSe produjo un error durante el juego.");
+        }
 
     if(EstadoJuego == VICTORIA)
         enviarDatosAlServidor(sock, jugador.nombre, jugador.puntaje, cantmovimientos);
