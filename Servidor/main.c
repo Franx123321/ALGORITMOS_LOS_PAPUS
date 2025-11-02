@@ -44,10 +44,8 @@ int procesarYGuardarDatos(const char* buffer) {
     char nombre[MAX_NOMBRE];
     int puntuacion, movimientos;
     Partida partida;
-    Jugador jugador, jugadorExistente;
-    FILE *archPartida, *archJugadores;
-    long pos;
-    int resultado = 0, encontrado = 0;
+    Jugador jugador;
+    int resultado = 0;
 
     if(sscanf(buffer, "%[^|]|%d|%d", nombre, &puntuacion,&movimientos) != 3) {
         printf("Error: formato de mensaje invalido\n");
@@ -74,69 +72,14 @@ int procesarYGuardarDatos(const char* buffer) {
     // Proteger acceso al archivo
     WaitForSingleObject(hArchivoMutex, INFINITE);
 
-    //DESCOMENTAR LA PARTE SIGUIENTE PARA ALMACENAR EN ARCHIVOS USANDO MIS FUNCIONES
-
-    /* 
-    resultado = almacenarJugador(&jugador);
+    resultado = almacenarJugador(&jugador); //escribo en el archivo de jugadores
     if(!resultado){
         return 0;
     }
-    resultado = almacenarPartida(&jugador, movimientos);
+    resultado = almacenarPartida(&jugador, movimientos); //escribo en el archivo de partidas
     if(!resultado){
         return 0;
-    }*/
-
-    // DESCOMENTAR LA PARTE SIGUIENTE PARA ALMACENAR EN ARCHIVOS USANDO LAS FUNCIONES DE LEO
-
-    /*
-    archJugadores = fopen("Jugadores.dat", "r+b");
-    if (!archJugadores) {
-        archJugadores = fopen("Jugadores.dat", "w+b");
     }
-    if(archJugadores) {
-        while(fread(&jugadorExistente, sizeof(Jugador), 1, archJugadores) == 1) { //Leoo, 10, 20
-            if(strcmp(jugadorExistente.nombre, nombre) == 0) {
-                encontrado = 1;
-                break;
-            }
-        }
-        if (encontrado==0) {
-            // Agregar nuevo jugador
-            strncpy(jugador.nombre, nombre, MAX_NOMBRE - 1);
-            jugador.nombre[MAX_NOMBRE - 1] = '\0';
-            jugador.id = (int)(ftell(archJugadores) / sizeof(Jugador)) + 1;
-            jugador.puntaje = puntuacion;
-            fseek(archJugadores, 0, SEEK_END);
-            fwrite(&jugador, sizeof(Jugador), 1, archJugadores);
-        }
-        else if(encontrado==1){
-            jugadorExistente.puntaje+=puntuacion;
-            fseek(archJugadores,(int)((-1)*sizeof(Jugador)), SEEK_CUR);
-            fwrite(&jugadorExistente, sizeof(Jugador), 1, archJugadores);
-        }
-        fflush(archJugadores);
-        fclose(archJugadores);
-    } else {
-        printf("Error al abrir jugadores.dat\n");
-    }
-
-    archPartida = fopen("Partidas.dat", "ab");
-    if(archPartida) {
-        fseek(archPartida, 0, SEEK_END);
-        pos = ftell(archPartida);
-        partida.id_partida = (int)(pos / sizeof(Partida)) + 1;
-
-        if(fwrite(&partida, sizeof(Partida), 1, archPartida) == 1) {
-            printf("Datos guardados: Jugador=%s, ID=%d, Movimientos=%d\n",
-                   partida.nombre, partida.id_partida, partida.cantidad_movimientos);
-            resultado = 1;
-        }
-
-        fflush(archPartida);
-        fclose(archPartida);
-    } else {
-        printf("Error al abrir partidas.dat\n");
-    }*/
 
     ReleaseMutex(hArchivoMutex);
     return 1;
@@ -290,8 +233,7 @@ DWORD WINAPI atenderCliente(LPVOID arg)
     SOCKET cliente = datos->sock;
     char buffer[TAM_BUFFER],
          *bienvenida = "Bienvenido al servidor de Laberintos y Fantasmas!\n";
-    int bytes, cantmovrecv;
-    Jugador jugador;
+    int bytes;
     char mensaje[TAM_BUFFER];
 
     crearCola(&datos->cola);

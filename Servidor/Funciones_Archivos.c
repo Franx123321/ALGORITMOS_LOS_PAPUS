@@ -17,7 +17,6 @@ int almacenarJugador(Jugador *j) {
 
     Usuario user;
     tArbolBinBusq arbol;
-    crearArbol(&arbol);
     tNodoArbol **iuser;
 
     fseek(uf, 0, SEEK_END);
@@ -35,7 +34,7 @@ int almacenarJugador(Jugador *j) {
         return TODO_BIEN;
     }
 
-
+    crearArbol(&arbol); //creo el arbol
     cargarIndiceDesdeArchivo(&arbol, uf); // Cargar el árbol con los usuarios existentes
 
 
@@ -93,10 +92,10 @@ void cargarIndiceDesdeArchivo(tArbolBinBusq *p, FILE *pf){
 }
 
 int comparacionArbol(const void *a, const void *b){
-    Induser *ca = (Induser *)a;
-    char *cb = (char*)b;
+    const char *nombreClave = (const char *)b;
+    const Induser *usuario = (const Induser *)a;
 
-    return strcmp(ca->nombre, cb);
+    return strcmp(usuario->nombre, nombreClave);
 }
 
 int comparacionIndexes(const void *a, const void *b){
