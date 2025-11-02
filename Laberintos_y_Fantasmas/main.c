@@ -130,9 +130,18 @@ int main()
     else if(opMenu == 2) //TEMPORAL
         destruir_matriz((void **)laberinto.celdas, laberinto.filas);
     else if(opMenu == 1)
+    {
         if (pantallaIngresarNombre(&sdl, sdl.fuente, &jugador) != SALIR)
+<<<<<<< Updated upstream
             if(Jugar(&laberinto, &jugador, fantasmas, config.maxFantasmas, &sdl, &ColaMovimientos) != TODO_BIEN)
+=======
+        {
+            EstadoJuego = Jugar(&laberinto, &jugador, fantasmas, config.maxFantasmas, &sdl, &ColaMovimientos, &cantmovimientos);
+            if(EstadoJuego != VICTORIA && EstadoJuego != DERROTA)
+>>>>>>> Stashed changes
                 printf("\nSe produjo un error durante el juego.");
+        }
+    }
 
     send(sock, "FIN", 3, 0);
 

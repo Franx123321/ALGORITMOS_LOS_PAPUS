@@ -178,7 +178,7 @@ int menu(SDL_Renderer *renderer, TTF_Font *fuente, int ancho, int alto)
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderClear(renderer);
 
-        supTexto = TTF_RenderText_Blended(fuente, titulo, COLOR_ROJO);
+        supTexto = TTF_RenderText_Solid(fuente, titulo, COLOR_ROJO);
         texturaTexto = SDL_CreateTextureFromSurface(renderer, supTexto);
 
         recta.x = ancho / 2 - supTexto->w / 2;
@@ -193,7 +193,7 @@ int menu(SDL_Renderer *renderer, TTF_Font *fuente, int ancho, int alto)
         for(I = 0; I < 3; I++)
         {
             color = (I == hover) ? COLOR_AMARILLO : COLOR_BLANCO;
-            supTexto = TTF_RenderText_Blended(fuente, opciones[I], color);
+            supTexto = TTF_RenderText_Solid(fuente, opciones[I], color);
             texturaTexto = SDL_CreateTextureFromSurface(renderer, supTexto);
 
             recta.x = ancho / 2 - supTexto->w / 2;
@@ -260,14 +260,17 @@ int menu(SDL_Renderer *renderer, TTF_Font *fuente, int ancho, int alto)
 int pantallaIngresarNombre(ContextoSDL *sdl, TTF_Font *fuente, Jugador *jugador)
 {
     SDL_Event evento;
-    int op, ejecutando = 1, actualizar = 1, I, x, y, hover = -1, prevHover = -1,
+    int op, ejecutando = 1, actualizar = 1, 
+        x = 0, y = 0, hover = -1, prevHover = -1,
         noNombre = 0, ancho = sdl->ancho, alto = sdl->alto;
+    const int botonIndex = 0;
     const char *titulo = "LABERINTOS Y FANTASMAS",
                *descripcion = "Ingrese su nombre",
                *advertencia = "El nombre esta vacio",
                *iniciar = "INICIAR";
-    SDL_Surface *supTexto;
-    SDL_Texture *texTitulo, *texDescripcion, *texturaTexto;
+    size_t espacio;
+    SDL_Surface *supTexto = NULL;
+    SDL_Texture *texTitulo = NULL, *texDescripcion = NULL, *texturaTexto = NULL;
     SDL_Rect recta, rectaTitulo, rectaDesc, rectaBoton;
     SDL_Color color;
 
@@ -275,7 +278,12 @@ int pantallaIngresarNombre(ContextoSDL *sdl, TTF_Font *fuente, Jugador *jugador)
     *nombre = '\0';
 
     // Titulo
-    supTexto = TTF_RenderText_Blended(fuente, titulo, COLOR_ROJO);
+    supTexto = TTF_RenderText_Solid(fuente, titulo, COLOR_ROJO);
+    if(!supTexto)
+    {
+        printf("\nERROR al renderizar titulo: %s\n", TTF_GetError());
+        return SALIR;
+    }
     texTitulo = SDL_CreateTextureFromSurface(sdl->renderer, supTexto);
 
     rectaTitulo.x = ancho / 2 - supTexto->w / 2;
@@ -284,9 +292,15 @@ int pantallaIngresarNombre(ContextoSDL *sdl, TTF_Font *fuente, Jugador *jugador)
     rectaTitulo.h = supTexto->h;
 
     SDL_FreeSurface(supTexto);
+    supTexto = NULL;
 
     // Descripcion
-    supTexto = TTF_RenderText_Blended(fuente, descripcion, COLOR_BLANCO);
+    supTexto = TTF_RenderText_Solid(fuente, descripcion, COLOR_BLANCO);
+    if (!supTexto) {
+        SDL_DestroyTexture(texTitulo);
+        printf("\nERROR al renderizar descripcion: %s\n", TTF_GetError());
+        return SALIR;
+    }
     texDescripcion = SDL_CreateTextureFromSurface(sdl->renderer, supTexto);
 
     rectaDesc.x = ancho / 2 - supTexto->w / 2;
@@ -295,6 +309,9 @@ int pantallaIngresarNombre(ContextoSDL *sdl, TTF_Font *fuente, Jugador *jugador)
     rectaDesc.h = supTexto->h;
 
     SDL_FreeSurface(supTexto);
+    supTexto = NULL;
+
+    SDL_StartTextInput();
 
     while(ejecutando)
     {
@@ -304,55 +321,77 @@ int pantallaIngresarNombre(ContextoSDL *sdl, TTF_Font *fuente, Jugador *jugador)
             SDL_RenderClear(sdl->renderer);
 
             // Titulo
-            SDL_RenderCopy(sdl->renderer, texTitulo, NULL, &rectaTitulo);
+            if(texTitulo)
+                SDL_RenderCopy(sdl->renderer, texTitulo, NULL, &rectaTitulo);
 
             // Ingrese su nombre
-            SDL_RenderCopy(sdl->renderer, texDescripcion, NULL, &rectaDesc);
+            if(texDescripcion)
+                SDL_RenderCopy(sdl->renderer, texDescripcion, NULL, &rectaDesc);
 
-            if (*nombre) {
-                supTexto = TTF_RenderText_Blended(fuente, nombre, COLOR_BLANCO);
-                texturaTexto = SDL_CreateTextureFromSurface(sdl->renderer, supTexto);
+            if (nombre[0] != '\0') 
+            {
+                supTexto = TTF_RenderText_Solid(fuente, nombre, COLOR_BLANCO);
+                if(supTexto)
+                {
+                    texturaTexto = SDL_CreateTextureFromSurface(sdl->renderer, supTexto);
 
-                recta.x = ancho / 2 - supTexto->w / 2;
-                recta.y = alto / 15 * 7;
-                recta.w = supTexto->w;
-                recta.h = supTexto->h;
+                    recta.x = ancho / 2 - supTexto->w / 2;
+                    recta.y = alto / 15 * 7;
+                    recta.w = supTexto->w;
+                    recta.h = supTexto->h;
 
-                SDL_RenderCopy(sdl->renderer, texturaTexto, NULL, &recta);
-                SDL_FreeSurface(supTexto);
-                SDL_DestroyTexture(texturaTexto);
+                    if(texturaTexto)
+                        SDL_RenderCopy(sdl->renderer, texturaTexto, NULL, &recta);
 
-                // Cursor de texto
-                SDL_SetRenderDrawColor(sdl->renderer, 255, 255, 255, 255);
-                SDL_RenderDrawLine(sdl->renderer, recta.x + recta.w, recta.y, recta.x + recta.w, recta.y + recta.h);
+                    SDL_FreeSurface(supTexto);
+                    supTexto = NULL;
+
+                    if(texturaTexto)
+                    {
+                        SDL_DestroyTexture(texturaTexto);
+                        texturaTexto = NULL;
+                    }
+
+                    // Cursor de texto
+                    SDL_SetRenderDrawColor(sdl->renderer, 255, 255, 255, 255);
+                    SDL_RenderDrawLine(sdl->renderer, recta.x + recta.w, recta.y, recta.x + recta.w, recta.y + recta.h);
+                }
             }
-            else {
+            else 
+            {
                 SDL_SetRenderDrawColor(sdl->renderer, 255, 255, 255, 255);
                 SDL_RenderDrawLine(sdl->renderer, ancho / 2, alto / 15 * 7, ancho / 2, alto / 15 * 7 + rectaTitulo.h);
             }
 
 
-            if (noNombre) {
+            if (noNombre) 
                 renderizarCentrado(sdl->renderer, sdl->fuente, advertencia, COLOR_AMARILLO, ancho, alto / 5 * 7, 1);
-            }
 
             // Boton Iniciar
-            color = (I == hover) ? COLOR_AMARILLO : COLOR_BLANCO;
-            supTexto = TTF_RenderText_Blended(fuente, iniciar, color);
-            texturaTexto = SDL_CreateTextureFromSurface(sdl->renderer, supTexto);
+            color = (botonIndex == hover) ? COLOR_AMARILLO : COLOR_BLANCO;
+            supTexto = TTF_RenderText_Solid(fuente, iniciar, color);
+            if(supTexto)
+            {
+                texturaTexto = SDL_CreateTextureFromSurface(sdl->renderer, supTexto);
 
-            recta.x = ancho / 2 - supTexto->w / 2;
-            recta.y = alto - (supTexto->h + 80);
-            recta.w = supTexto->w;
-            recta.h = supTexto->h;
+                recta.x = ancho / 2 - supTexto->w / 2;
+                recta.y = alto - (supTexto->h + 80);
+                recta.w = supTexto->w;
+                recta.h = supTexto->h;
 
-            SDL_RenderCopy(sdl->renderer, texturaTexto, NULL, &recta);
-            SDL_FreeSurface(supTexto);
-            SDL_DestroyTexture(texturaTexto);
+                if(texturaTexto)
+                    SDL_RenderCopy(sdl->renderer, texturaTexto, NULL, &recta);
+                SDL_FreeSurface(supTexto);
+                supTexto = NULL;
+                if(texturaTexto)
+                {
+                    SDL_DestroyTexture(texturaTexto);
+                    texturaTexto = NULL;
+                }
+            }
 
             rectaBoton = recta;
             actualizar = 0;
-
             SDL_RenderPresent(sdl->renderer);
         }
 
@@ -374,9 +413,7 @@ int pantallaIngresarNombre(ContextoSDL *sdl, TTF_Font *fuente, Jugador *jugador)
 
                 if (x >= rectaBoton.x && x <= rectaBoton.x + rectaBoton.w &&
                     y >= rectaBoton.y && y <= rectaBoton.y + rectaBoton.h)
-                {
-                    hover = I;
-                }
+                    hover = botonIndex;
 
                 if (hover != prevHover)
                     actualizar = 1;
@@ -404,12 +441,13 @@ int pantallaIngresarNombre(ContextoSDL *sdl, TTF_Font *fuente, Jugador *jugador)
             {
                 if(evento.key.keysym.sym == SDLK_RETURN)
                 {
-                    if (*nombre)
+                    if (nombre[0] != '\0')
                     {
                         op = 1;
                         ejecutando = 0;
                     }
-                    else {
+                    else 
+                    {
                         noNombre = 1;
                         actualizar = 1;
                     }
@@ -421,22 +459,42 @@ int pantallaIngresarNombre(ContextoSDL *sdl, TTF_Font *fuente, Jugador *jugador)
                 }
                 else if(evento.key.keysym.sym == SDLK_BACKSPACE)
                 {
-                    *(nombre + MAX(0, strlen(nombre) - 1)) = '\0';
+                    if(strlen(nombre) > 0)
+                        nombre[strlen(nombre) - 1] = '\0';
                     actualizar = 1;
                 }
             }
             else if (evento.type == SDL_TEXTINPUT)
             {
+<<<<<<< Updated upstream
                 strncat(nombre, evento.text.text, 50 - strlen(nombre));
                 noNombre = 0;
                 actualizar = 1;
+=======
+                espacio = sizeof(nombre) - 1 - strlen(nombre);
+                if(espacio > 0)
+                {
+                    strncat(nombre, evento.text.text, espacio);
+                    noNombre = 0;
+                    actualizar = 1;
+                }
+>>>>>>> Stashed changes
             }
         }
 
         SDL_Delay(16);
     }
 
+<<<<<<< Updated upstream
     strcpy(jugador->nombre, nombre);
+=======
+    //strcpy(jugador->nombre, nombre);
+    strncpy(jugador->nombre, nombre, sizeof(jugador->nombre) - 1);
+    jugador->nombre[sizeof(jugador->nombre) - 1] = '\0';
+
+    if (texTitulo) SDL_DestroyTexture(texTitulo);
+    if (texDescripcion) SDL_DestroyTexture(texDescripcion);
+>>>>>>> Stashed changes
 
     SDL_DestroyTexture(texTitulo);
     SDL_DestroyTexture(texDescripcion);
