@@ -260,7 +260,7 @@ int menu(SDL_Renderer *renderer, TTF_Font *fuente, int ancho, int alto)
 int pantallaIngresarNombre(ContextoSDL *sdl, TTF_Font *fuente, Jugador *jugador)
 {
     SDL_Event evento;
-    int op, ejecutando = 1, actualizar = 1, I, x, y, hover = -1, prevHover = -1,
+    int op, ejecutando = 1, actualizar = 1, I = 0, x, y, hover = -1, prevHover = -1,
         noNombre = 0, ancho = sdl->ancho, alto = sdl->alto;
     const char *titulo = "LABERINTOS Y FANTASMAS",
                *descripcion = "Ingrese su nombre",
