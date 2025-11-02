@@ -37,6 +37,18 @@
 		<Linker>
 			<Add library="ws2_32" />
 		</Linker>
+		<Unit filename="Funciones_Archivos.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Funciones_Archivos.h" />
+		<Unit filename="arbol.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="arbol.h" />
+		<Unit filename="cola.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="cola.h" />
 		<Unit filename="main.c">
 			<Option compilerVar="CC" />
 		</Unit>

@@ -37,15 +37,13 @@
 		</Compiler>
 		<Linker>
 			<Add option="-mconsole" />
+			<Add library="ws2_32" />
 			<Add library="SDL2main" />
 			<Add library="SDL2" />
 			<Add library="SDL2_ttf" />
+			<Add library="SDL2_mixer" />
 			<Add directory="SDL2/lib" />
 		</Linker>
-		<Unit filename="Funciones_Archivos.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="Funciones_Archivos.h" />
 		<Unit filename="Funciones_Generacion.c">
 			<Option compilerVar="CC" />
 		</Unit>
