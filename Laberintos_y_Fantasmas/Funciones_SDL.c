@@ -148,7 +148,7 @@ int renderizarTexto(SDL_Renderer *renderer, TTF_Font *fuente, const char *mensaj
     if(!renderer || !fuente || !mensaje)
         return ERROR_SDL;
 
-    superficie = TTF_RenderText_Solid(fuente, mensaje, color);
+    superficie = TTF_RenderText_Blended(fuente, mensaje, color);
     if(!superficie)
     {
         printf("\nERROR al renderizar un texto: %s", TTF_GetError());
@@ -198,7 +198,7 @@ void renderizarHUD(SDL_Renderer *renderer, TTF_Font *fuente, const char *mensaje
     //Renderizar texto con TTF blended para mejor calidad
     if(superficie)
         SDL_FreeSurface(superficie);
-    superficie = TTF_RenderText_Solid(fuente, mensaje, color);
+    superficie = TTF_RenderText_Blended(fuente, mensaje, color);
 
     texto = SDL_CreateTextureFromSurface(renderer, superficie);
     SDL_FreeSurface(superficie);
