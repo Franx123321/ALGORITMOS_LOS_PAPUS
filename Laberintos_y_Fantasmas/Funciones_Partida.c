@@ -159,7 +159,7 @@ int encontrarFantasma(Fantasma *fantasmas, int maxFantasmas, int x, int y)
 
 
 //FUNCIONES DE PARTIDA//
-int menu(SDL_Renderer *renderer, TTF_Font *fuente, int ancho, int alto)
+int menu(ContextoSDL *sdl)
 {
     SDL_Event evento;
     int op, ejecutando = 1, I, x, y, hover = -1;
@@ -168,6 +168,7 @@ int menu(SDL_Renderer *renderer, TTF_Font *fuente, int ancho, int alto)
                *ranking = "VER RANKING",
                *salir = "SALIR";
     const char *opciones[] = {jugar, ranking, salir};
+    TTF_Font *fuente = sdl->fuente;
     SDL_Surface *supTexto;
     SDL_Texture *texturaTexto;
     SDL_Rect recta, rectaOpciones[3];
@@ -175,18 +176,18 @@ int menu(SDL_Renderer *renderer, TTF_Font *fuente, int ancho, int alto)
 
     while(ejecutando)
     {
-        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-        SDL_RenderClear(renderer);
+        SDL_SetRenderDrawColor(sdl->renderer, 0, 0, 0, 255);
+        SDL_RenderClear(sdl->renderer);
 
         supTexto = TTF_RenderText_Blended(fuente, titulo, COLOR_ROJO);
-        texturaTexto = SDL_CreateTextureFromSurface(renderer, supTexto);
+        texturaTexto = SDL_CreateTextureFromSurface(sdl->renderer, supTexto);
 
-        recta.x = ancho / 2 - supTexto->w / 2;
-        recta.y = alto / 5;
+        recta.x = sdl->ancho / 2 - supTexto->w / 2;
+        recta.y = sdl->alto / 5;
         recta.w = supTexto->w;
         recta.h = supTexto->h;
 
-        SDL_RenderCopy(renderer, texturaTexto, NULL, &recta);
+        SDL_RenderCopy(sdl->renderer, texturaTexto, NULL, &recta);
         SDL_FreeSurface(supTexto);
         SDL_DestroyTexture(texturaTexto);
 
@@ -194,21 +195,21 @@ int menu(SDL_Renderer *renderer, TTF_Font *fuente, int ancho, int alto)
         {
             color = (I == hover) ? COLOR_AMARILLO : COLOR_BLANCO;
             supTexto = TTF_RenderText_Blended(fuente, opciones[I], color);
-            texturaTexto = SDL_CreateTextureFromSurface(renderer, supTexto);
+            texturaTexto = SDL_CreateTextureFromSurface(sdl->renderer, supTexto);
 
-            recta.x = ancho / 2 - supTexto->w / 2;
-            recta.y = (alto / 2) + (I * (supTexto->h + 20));
+            recta.x = sdl->ancho / 2 - supTexto->w / 2;
+            recta.y = sdl->alto / 2 + (I * (supTexto->h + 20));
             recta.w = supTexto->w;
             recta.h = supTexto->h;
 
-            SDL_RenderCopy(renderer, texturaTexto, NULL, &recta);
+            SDL_RenderCopy(sdl->renderer, texturaTexto, NULL, &recta);
             SDL_FreeSurface(supTexto);
             SDL_DestroyTexture(texturaTexto);
 
             rectaOpciones[I] = recta;
         }
 
-        SDL_RenderPresent(renderer);
+        SDL_RenderPresent(sdl->renderer);
 
         while(SDL_PollEvent(&evento))
         {
@@ -216,6 +217,10 @@ int menu(SDL_Renderer *renderer, TTF_Font *fuente, int ancho, int alto)
             {
                 op = 3;
                 ejecutando = 0;
+            }
+            else if (evento.type == SDL_WINDOWEVENT && evento.window.event == SDL_WINDOWEVENT_RESIZED) {
+                sdl->ancho = evento.window.data1;
+                sdl->alto = evento.window.data2;
             }
             else if(evento.type == SDL_MOUSEMOTION)
             {
@@ -260,7 +265,7 @@ int menu(SDL_Renderer *renderer, TTF_Font *fuente, int ancho, int alto)
 int pantallaIngresarNombre(ContextoSDL *sdl, TTF_Font *fuente, Jugador *jugador)
 {
     SDL_Event evento;
-    int op, ejecutando = 1, actualizar = 1, I, x, y, hover = -1, prevHover = -1,
+    int op, ejecutando = 1, actualizar = 1, x, y, hover = 0, prevHover = 0,
         noNombre = 0, ancho = sdl->ancho, alto = sdl->alto;
     const char *titulo = "LABERINTOS Y FANTASMAS",
                *descripcion = "Ingrese su nombre",
@@ -278,8 +283,6 @@ int pantallaIngresarNombre(ContextoSDL *sdl, TTF_Font *fuente, Jugador *jugador)
     supTexto = TTF_RenderText_Blended(fuente, titulo, COLOR_ROJO);
     texTitulo = SDL_CreateTextureFromSurface(sdl->renderer, supTexto);
 
-    rectaTitulo.x = ancho / 2 - supTexto->w / 2;
-    rectaTitulo.y = alto / 5;
     rectaTitulo.w = supTexto->w;
     rectaTitulo.h = supTexto->h;
 
@@ -289,8 +292,6 @@ int pantallaIngresarNombre(ContextoSDL *sdl, TTF_Font *fuente, Jugador *jugador)
     supTexto = TTF_RenderText_Blended(fuente, descripcion, COLOR_BLANCO);
     texDescripcion = SDL_CreateTextureFromSurface(sdl->renderer, supTexto);
 
-    rectaDesc.x = ancho / 2 - supTexto->w / 2;
-    rectaDesc.y = alto / 15 * 5;
     rectaDesc.w = supTexto->w;
     rectaDesc.h = supTexto->h;
 
@@ -304,9 +305,13 @@ int pantallaIngresarNombre(ContextoSDL *sdl, TTF_Font *fuente, Jugador *jugador)
             SDL_RenderClear(sdl->renderer);
 
             // Titulo
+            rectaTitulo.x = ancho / 2 - rectaTitulo.w / 2;
+            rectaTitulo.y = alto / 5;
             SDL_RenderCopy(sdl->renderer, texTitulo, NULL, &rectaTitulo);
 
             // Ingrese su nombre
+            rectaDesc.x = ancho / 2 - rectaDesc.w / 2;
+            rectaDesc.y = alto / 15 * 5;
             SDL_RenderCopy(sdl->renderer, texDescripcion, NULL, &rectaDesc);
 
             if (*nombre) {
@@ -337,7 +342,7 @@ int pantallaIngresarNombre(ContextoSDL *sdl, TTF_Font *fuente, Jugador *jugador)
             }
 
             // Boton Iniciar
-            color = (I == hover) ? COLOR_AMARILLO : COLOR_BLANCO;
+            color = hover ? COLOR_AMARILLO : COLOR_BLANCO;
             supTexto = TTF_RenderText_Blended(fuente, iniciar, color);
             texturaTexto = SDL_CreateTextureFromSurface(sdl->renderer, supTexto);
 
@@ -364,18 +369,26 @@ int pantallaIngresarNombre(ContextoSDL *sdl, TTF_Font *fuente, Jugador *jugador)
                 op = SALIR;
                 ejecutando = 0;
             }
+            else if (evento.type == SDL_WINDOWEVENT && evento.window.event == SDL_WINDOWEVENT_RESIZED) {
+                ancho = evento.window.data1;
+                alto = evento.window.data2;
+                sdl->ancho = ancho;
+                sdl->alto = alto;
+
+                actualizar = 1;
+            }
             else if(evento.type == SDL_MOUSEMOTION)
             {
                 x = evento.motion.x;
                 y = evento.motion.y;
 
                 prevHover = hover;
-                hover = -1;
+                hover = 0;
 
                 if (x >= rectaBoton.x && x <= rectaBoton.x + rectaBoton.w &&
                     y >= rectaBoton.y && y <= rectaBoton.y + rectaBoton.h)
                 {
-                    hover = I;
+                    hover = 1;
                 }
 
                 if (hover != prevHover)

@@ -7,7 +7,7 @@
 #include "Funciones_Tablero.h"
 #include "Funciones_Generacion.h"
 
-int menu(SDL_Renderer *renderer, TTF_Font *fuente, int ancho, int alto);
+int menu(ContextoSDL *sdl);
 int pantallaIngresarNombre(ContextoSDL *sdl, TTF_Font *fuente, Jugador *jugador);
 int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFantasmas,
             ContextoSDL *sdl, tCola *ColaMovimientos);

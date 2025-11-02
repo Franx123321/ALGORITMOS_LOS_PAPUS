@@ -34,7 +34,7 @@ int main()
         printf("\nERROR al leer el archivo de configuración.");
         exit(1);
     }
-    
+
     fantasmas = malloc(config.maxFantasmas * sizeof(Fantasma));
     if(!fantasmas)
     {
@@ -124,7 +124,7 @@ int main()
 
     //LOGICA DE JUEGO//
     crearCola(&ColaMovimientos);
-    opMenu = menu(sdl.renderer, sdl.fuente, sdl.ancho, sdl.alto);
+    opMenu = menu(&sdl);
     if(opMenu == 3)
         printf("\nSe selecciono salir");
     else if(opMenu == 2) //TEMPORAL
