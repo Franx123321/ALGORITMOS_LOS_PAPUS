@@ -37,6 +37,10 @@
 		<Linker>
 			<Add library="ws2_32" />
 		</Linker>
+		<Unit filename="Funciones_Archivos.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Funciones_Archivos.h" />
 		<Unit filename="cola.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -44,6 +48,7 @@
 		<Unit filename="main.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="main.h" />
 		<Extensions>
 			<lib_finder disable_auto="1" />
 		</Extensions>
