@@ -597,7 +597,9 @@ int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFant
         if (offsetX < 0)
             offsetX = 0;
 
-        tamFuenteHudDeseado = 36;
+        // Valores mayores a 24 crashean todo al renderizar
+        // ciertas letras
+        tamFuenteHudDeseado = 24;
 
         if (tamFuenteHudDeseado != tamFuenteHudActual)
         {
@@ -708,41 +710,53 @@ int realizarMovimiento(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas
 void victoria(ContextoSDL *sdl, TTF_Font *fuente, int puntaje)
 {
     SDL_Event evento;
-    int salir = 0, ancho, alto;
+    int salir = 0, actualizar = 1, ancho, alto;
     char puntajeTexto[50];
     SDL_Rect vp;
     float escalaTexto = 1.0f;
 
-    ancho = sdl->ancho;
-    alto = sdl->alto;
-
-    SDL_RenderGetViewport(sdl->renderer, &vp);
-    if (vp.w > 0 && ancho > 0)
-    {
-        escalaTexto = (float)vp.w / (float)ancho;
-        if (escalaTexto <= 0.0f)
-            escalaTexto = 1.0f;
-    }
-
-    SDL_SetRenderDrawColor(sdl->renderer, 0, 0, 80, 255);
-    SDL_RenderClear(sdl->renderer);
-
-    sprintf(puntajeTexto, "Puntaje obtenido: %d", puntaje);
-    renderizarCentrado(sdl->renderer, fuente, "Victoria!", COLOR_BLANCO, ancho, alto / 2 - 20, escalaTexto);
-    renderizarCentrado(sdl->renderer, fuente, puntajeTexto, COLOR_AMARILLO, ancho, alto / 2 + 75, escalaTexto);
-    renderizarCentrado(sdl->renderer, fuente, "Presiona ESC para salir...", COLOR_GRIS, ancho, alto + 250, escalaTexto);
-
-    SDL_RenderPresent(sdl->renderer);
-
     while(!salir)
     {
+        if (actualizar)
+        {
+            ancho = sdl->ancho;
+            alto = sdl->alto;
+
+            SDL_RenderGetViewport(sdl->renderer, &vp);
+            if (vp.w > 0 && ancho > 0)
+            {
+                escalaTexto = (float)vp.w / (float)ancho;
+                if (escalaTexto <= 0.0f)
+                    escalaTexto = 1.0f;
+            }
+
+            SDL_SetRenderDrawColor(sdl->renderer, 0, 0, 80, 255);
+            SDL_RenderClear(sdl->renderer);
+
+            sprintf(puntajeTexto, "Puntaje obtenido: %d", puntaje);
+            renderizarCentrado(sdl->renderer, fuente, "Victoria!", COLOR_BLANCO, ancho, alto / 2 - 20, escalaTexto);
+            renderizarCentrado(sdl->renderer, fuente, puntajeTexto, COLOR_AMARILLO, ancho, alto / 2 + 75, escalaTexto);
+            renderizarCentrado(sdl->renderer, fuente, "Presiona ESC para salir...", COLOR_GRIS, ancho, alto + 250, escalaTexto);
+
+            SDL_RenderPresent(sdl->renderer);
+
+            actualizar = 0;
+        }
+
         while(SDL_PollEvent(&evento))
         {
             if(evento.type == SDL_QUIT)
                 salir = 1;
             else if(evento.type == SDL_KEYDOWN && evento.key.keysym.sym == SDLK_ESCAPE)
                 salir = 1;
+            else if (evento.type == SDL_WINDOWEVENT && evento.window.event == SDL_WINDOWEVENT_RESIZED) {
+                sdl->ancho = evento.window.data1;
+                sdl->alto = evento.window.data2;
+
+                actualizar = 1;
+            }
         }
+
         SDL_Delay(50);
     }
 }
@@ -750,39 +764,51 @@ void victoria(ContextoSDL *sdl, TTF_Font *fuente, int puntaje)
 void derrota(ContextoSDL *sdl, TTF_Font *fuente)
 {
     SDL_Event evento;
-    int salir = 0, ancho, alto;
+    int salir = 0, actualizar = 1, ancho, alto;
     SDL_Rect vp;
     float escalaTexto = 1.0f;
 
-    ancho = sdl->ancho;
-    alto = sdl->alto;
-
-    SDL_RenderGetViewport(sdl->renderer, &vp);
-    if (vp.w > 0 && ancho > 0)
-    {
-        escalaTexto = (float)vp.w / (float)ancho;
-        if (escalaTexto <= 0.0f)
-            escalaTexto = 1.0f;
-    }
-
-    SDL_SetRenderDrawColor(sdl->renderer, 60, 0, 0, 255);
-    SDL_RenderClear(sdl->renderer);
-
-    renderizarCentrado(sdl->renderer, fuente, "Game over", COLOR_ROJO, ancho, alto / 2 - 20, escalaTexto);
-    renderizarCentrado(sdl->renderer, fuente, "No se obtendran puntos.", COLOR_ROJO, ancho, alto / 2 + 75, escalaTexto);
-    renderizarCentrado(sdl->renderer, fuente, "Presiona ESC para salir...", COLOR_GRIS, ancho, alto + 250, escalaTexto);
-
-    SDL_RenderPresent(sdl->renderer);
-
     while(!salir)
     {
+        if (actualizar)
+        {
+            ancho = sdl->ancho;
+            alto = sdl->alto;
+
+            SDL_RenderGetViewport(sdl->renderer, &vp);
+            if (vp.w > 0 && ancho > 0)
+            {
+                escalaTexto = (float)vp.w / (float)ancho;
+                if (escalaTexto <= 0.0f)
+                    escalaTexto = 1.0f;
+            }
+
+            SDL_SetRenderDrawColor(sdl->renderer, 60, 0, 0, 255);
+            SDL_RenderClear(sdl->renderer);
+
+            renderizarCentrado(sdl->renderer, fuente, "Game over", COLOR_ROJO, ancho, alto / 2 - 20, escalaTexto);
+            renderizarCentrado(sdl->renderer, fuente, "No se obtendran puntos.", COLOR_ROJO, ancho, alto / 2 + 75, escalaTexto);
+            renderizarCentrado(sdl->renderer, fuente, "Presiona ESC para salir...", COLOR_GRIS, ancho, alto + 250, escalaTexto);
+
+            SDL_RenderPresent(sdl->renderer);
+
+            actualizar = 0;
+        }
+
         while(SDL_PollEvent(&evento))
         {
             if(evento.type == SDL_QUIT)
                 salir = 1;
             else if(evento.type == SDL_KEYDOWN && evento.key.keysym.sym == SDLK_ESCAPE)
                 salir = 1;
+            else if (evento.type == SDL_WINDOWEVENT && evento.window.event == SDL_WINDOWEVENT_RESIZED) {
+                sdl->ancho = evento.window.data1;
+                sdl->alto = evento.window.data2;
+
+                actualizar = 1;
+            }
         }
+
         SDL_Delay(50);
     }
 }

@@ -56,7 +56,7 @@
 #define MIN_ANCHO 480
 #define MIN_ALTO 480
 #define TAM_CELDA 24 //Tamaño en pixeles
-#define MARGEN 64    //Margen superior para el HUD
+#define MARGEN 48    //Margen superior para el HUD
 
 #define ERROR_ARCH 0
 #define ERROR_SDL 0
