@@ -131,23 +131,22 @@ int main()
 
     //LOGICA DE JUEGO//
     crearCola(&ColaMovimientos);
-    opMenu = menu(sdl.renderer, sdl.fuente, sdl.ancho, sdl.alto);
-    while(opMenu != 3 || EstadoJuego== 0)
+    while(1)
     {
+        opMenu = menu(&sdl);
         if(opMenu == 3){
             printf("\nSe selecciono salir");
             break;
         }
-        else if(opMenu == 2) //TEMPORAL
+        else if(opMenu == 2)
         {
             crearLista(&Ranking);
             verRanking(&Ranking,&sock);
-
-
             mostrarRankingSDL(&sdl, sdl.fuente, &Ranking);
             vaciarLista(&Ranking);
         }
         else if(opMenu == 1)
+        {
             if (pantallaIngresarNombre(&sdl, sdl.fuente, &jugador) != SALIR)
             {
                 EstadoJuego = Jugar(&laberinto, &jugador, fantasmas, config.maxFantasmas, &sdl, &ColaMovimientos, &cantmovimientos);
@@ -157,10 +156,11 @@ int main()
                 if(EstadoJuego == VICTORIA && sock!=INVALID_SOCKET)
                     enviarDatosAlServidor(sock, jugador.nombre, jugador.puntaje, cantmovimientos);
             }
-        opMenu = menu(sdl.renderer, sdl.fuente, sdl.ancho, sdl.alto);
+            break;
+        }
     }
 
-    
+
     if(sock!=INVALID_SOCKET)
         send(sock, "FIN", 3, 0);
 
