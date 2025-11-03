@@ -159,7 +159,7 @@ int encontrarFantasma(Fantasma *fantasmas, int maxFantasmas, int x, int y)
 
 
 //FUNCIONES DE PARTIDA//
-int menu(SDL_Renderer *renderer, TTF_Font *fuente, int ancho, int alto)
+int menu(ContextoSDL *sdl)
 {
     SDL_Event evento;
     int op, ejecutando = 1, I, x, y, hover = -1;
@@ -168,6 +168,7 @@ int menu(SDL_Renderer *renderer, TTF_Font *fuente, int ancho, int alto)
                *ranking = "VER RANKING",
                *salir = "SALIR";
     const char *opciones[] = {jugar, ranking, salir};
+    TTF_Font *fuente = sdl->fuente;
     SDL_Surface *supTexto;
     SDL_Texture *texturaTexto;
     SDL_Rect recta, rectaOpciones[3];
@@ -175,18 +176,18 @@ int menu(SDL_Renderer *renderer, TTF_Font *fuente, int ancho, int alto)
 
     while(ejecutando)
     {
-        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-        SDL_RenderClear(renderer);
+        SDL_SetRenderDrawColor(sdl->renderer, 0, 0, 0, 255);
+        SDL_RenderClear(sdl->renderer);
 
         supTexto = TTF_RenderText_Solid(fuente, titulo, COLOR_ROJO);
-        texturaTexto = SDL_CreateTextureFromSurface(renderer, supTexto);
+        texturaTexto = SDL_CreateTextureFromSurface(sdl->renderer, supTexto);
 
-        recta.x = ancho / 2 - supTexto->w / 2;
-        recta.y = alto / 5;
+        recta.x = sdl->ancho / 2 - supTexto->w / 2;
+        recta.y = sdl->alto / 5;
         recta.w = supTexto->w;
         recta.h = supTexto->h;
 
-        SDL_RenderCopy(renderer, texturaTexto, NULL, &recta);
+        SDL_RenderCopy(sdl->renderer, texturaTexto, NULL, &recta);
         SDL_FreeSurface(supTexto);
         SDL_DestroyTexture(texturaTexto);
 
@@ -194,21 +195,21 @@ int menu(SDL_Renderer *renderer, TTF_Font *fuente, int ancho, int alto)
         {
             color = (I == hover) ? COLOR_AMARILLO : COLOR_BLANCO;
             supTexto = TTF_RenderText_Solid(fuente, opciones[I], color);
-            texturaTexto = SDL_CreateTextureFromSurface(renderer, supTexto);
+            texturaTexto = SDL_CreateTextureFromSurface(sdl->renderer, supTexto);
 
-            recta.x = ancho / 2 - supTexto->w / 2;
-            recta.y = (alto / 2) + (I * (supTexto->h + 20));
+            recta.x = sdl->ancho / 2 - supTexto->w / 2;
+            recta.y = sdl->alto / 2 + (I * (supTexto->h + 20));
             recta.w = supTexto->w;
             recta.h = supTexto->h;
 
-            SDL_RenderCopy(renderer, texturaTexto, NULL, &recta);
+            SDL_RenderCopy(sdl->renderer, texturaTexto, NULL, &recta);
             SDL_FreeSurface(supTexto);
             SDL_DestroyTexture(texturaTexto);
 
             rectaOpciones[I] = recta;
         }
 
-        SDL_RenderPresent(renderer);
+        SDL_RenderPresent(sdl->renderer);
 
         while(SDL_PollEvent(&evento))
         {
@@ -216,6 +217,10 @@ int menu(SDL_Renderer *renderer, TTF_Font *fuente, int ancho, int alto)
             {
                 op = 3;
                 ejecutando = 0;
+            }
+            else if (evento.type == SDL_WINDOWEVENT && evento.window.event == SDL_WINDOWEVENT_RESIZED) {
+                sdl->ancho = evento.window.data1;
+                sdl->alto = evento.window.data2;
             }
             else if(evento.type == SDL_MOUSEMOTION)
             {
@@ -260,7 +265,7 @@ int menu(SDL_Renderer *renderer, TTF_Font *fuente, int ancho, int alto)
 int pantallaIngresarNombre(ContextoSDL *sdl, TTF_Font *fuente, Jugador *jugador)
 {
     SDL_Event evento;
-    int op, ejecutando = 1, actualizar = 1, I = 0, x, y, hover = -1, prevHover = -1,
+    int op, ejecutando = 1, actualizar = 1, x, y, hover = 0, prevHover = 0,
         noNombre = 0, ancho = sdl->ancho, alto = sdl->alto;
     const char *titulo = "LABERINTOS Y FANTASMAS",
                *descripcion = "Ingrese su nombre",
@@ -278,8 +283,6 @@ int pantallaIngresarNombre(ContextoSDL *sdl, TTF_Font *fuente, Jugador *jugador)
     supTexto = TTF_RenderText_Solid(fuente, titulo, COLOR_ROJO);
     texTitulo = SDL_CreateTextureFromSurface(sdl->renderer, supTexto);
 
-    rectaTitulo.x = ancho / 2 - supTexto->w / 2;
-    rectaTitulo.y = alto / 5;
     rectaTitulo.w = supTexto->w;
     rectaTitulo.h = supTexto->h;
 
@@ -289,8 +292,6 @@ int pantallaIngresarNombre(ContextoSDL *sdl, TTF_Font *fuente, Jugador *jugador)
     supTexto = TTF_RenderText_Solid(fuente, descripcion, COLOR_BLANCO);
     texDescripcion = SDL_CreateTextureFromSurface(sdl->renderer, supTexto);
 
-    rectaDesc.x = ancho / 2 - supTexto->w / 2;
-    rectaDesc.y = alto / 15 * 5;
     rectaDesc.w = supTexto->w;
     rectaDesc.h = supTexto->h;
 
@@ -304,9 +305,13 @@ int pantallaIngresarNombre(ContextoSDL *sdl, TTF_Font *fuente, Jugador *jugador)
             SDL_RenderClear(sdl->renderer);
 
             // Titulo
+            rectaTitulo.x = ancho / 2 - rectaTitulo.w / 2;
+            rectaTitulo.y = alto / 5;
             SDL_RenderCopy(sdl->renderer, texTitulo, NULL, &rectaTitulo);
 
             // Ingrese su nombre
+            rectaDesc.x = ancho / 2 - rectaDesc.w / 2;
+            rectaDesc.y = alto / 15 * 5;
             SDL_RenderCopy(sdl->renderer, texDescripcion, NULL, &rectaDesc);
 
             if (*nombre) {
@@ -337,7 +342,7 @@ int pantallaIngresarNombre(ContextoSDL *sdl, TTF_Font *fuente, Jugador *jugador)
             }
 
             // Boton Iniciar
-            color = (I == hover) ? COLOR_AMARILLO : COLOR_BLANCO;
+            color = hover ? COLOR_AMARILLO : COLOR_BLANCO;
             supTexto = TTF_RenderText_Solid(fuente, iniciar, color);
             texturaTexto = SDL_CreateTextureFromSurface(sdl->renderer, supTexto);
 
@@ -364,18 +369,26 @@ int pantallaIngresarNombre(ContextoSDL *sdl, TTF_Font *fuente, Jugador *jugador)
                 op = SALIR;
                 ejecutando = 0;
             }
+            else if (evento.type == SDL_WINDOWEVENT && evento.window.event == SDL_WINDOWEVENT_RESIZED) {
+                ancho = evento.window.data1;
+                alto = evento.window.data2;
+                sdl->ancho = ancho;
+                sdl->alto = alto;
+
+                actualizar = 1;
+            }
             else if(evento.type == SDL_MOUSEMOTION)
             {
                 x = evento.motion.x;
                 y = evento.motion.y;
 
                 prevHover = hover;
-                hover = -1;
+                hover = 0;
 
                 if (x >= rectaBoton.x && x <= rectaBoton.x + rectaBoton.w &&
                     y >= rectaBoton.y && y <= rectaBoton.y + rectaBoton.h)
                 {
-                    hover = I;
+                    hover = 1;
                 }
 
                 if (hover != prevHover)
@@ -453,15 +466,12 @@ int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFant
 {
 
     char movimiento = 0, aseguradorMovimiento;
-    int estado = 1, jugando = 1, tamCeldaReal, winW, winH,
-        vpW, vpH, totalWidth, offsetX, tamFuenteHudDeseado;
-    float escalaX, escalaY, escala, escalaTexto = 1.0f;
+    int estado = 1, jugando = 1, Woriginal, Horiginal, tamFuenteHudActual = 0, tamFuenteHudDeseado;
+    float escalaTexto = 1.0f;
     TTF_Font *fuenteLocal = NULL;
     TTF_Font *fuenteHudOriginal = NULL;
-    int tamFuenteHudActual = 0;
     TTF_Font *fuenteHudLocal = NULL;
     SDL_Event evento;
-    SDL_Rect vp;
     Mix_Music *musica = NULL;
 
     if (!laberinto || !jugador || !fantasmas || !sdl || !ColaMovimientos)
@@ -473,7 +483,7 @@ int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFant
     else if(Mix_PlayMusic(musica, -1) == -1)
         printf("\nERROR al reproducir la musica: %s", Mix_GetError());
 
-    SDL_GetWindowSize(sdl->ventana, &winW, &winH);
+    SDL_GetWindowSize(sdl->ventana, &Woriginal, &Horiginal);
 
     // Inicializar punteros locales a las fuentes iniciales (simplificar)
     if (sdl->fuente)
@@ -486,7 +496,7 @@ int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFant
     else
         fuenteHudOriginal = NULL;
 
-
+  
     while(jugando && estado != VICTORIA)
     {
         while(SDL_PollEvent(&evento))
@@ -495,22 +505,8 @@ int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFant
                 jugando = 0;
             else if (evento.type == SDL_WINDOWEVENT && evento.window.event == SDL_WINDOWEVENT_RESIZED)
             {
-                winH = evento.window.data2;
-                escalaX = (float) winW / sdl->ancho;
-                escalaY = (float) winH / sdl->alto;
-                escala = MIN(escalaX, escalaY);
-                if (escala <= 0.0f)
-                    escala = 1.0f;
-
-                vpW = (int)(sdl->ancho * escala);
-                vpH = (int)(sdl->alto * escala);
-
-                vp.x = (winW - vpW) / 2;
-                vp.y = (winH - vpH) / 2;
-                vp.w = vpW;
-                vp.h = vpH;
-
-                SDL_RenderSetViewport(sdl->renderer, &vp);
+                sdl->ancho = evento.window.data1;
+                sdl->alto = evento.window.data2;
             }
             else if(evento.type == SDL_KEYDOWN)
             {
@@ -575,16 +571,9 @@ int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFant
         SDL_SetRenderDrawColor(sdl->renderer, 0, 0, 0, 255);
         SDL_RenderClear(sdl->renderer);
 
-        tamCeldaReal = (sdl->ancho / laberinto->columnas);
-        if (tamCeldaReal <= 0)
-            tamCeldaReal = 1;
-
-        totalWidth = tamCeldaReal * laberinto->columnas;
-        offsetX = (sdl->ancho - totalWidth) / 2;
-        if (offsetX < 0)
-            offsetX = 0;
-
-        tamFuenteHudDeseado = 35;
+        // Valores mayores a 24 crashean todo al renderizar
+        // ciertas letras
+        tamFuenteHudDeseado = 24;
 
         if (tamFuenteHudDeseado != tamFuenteHudActual)
         {
@@ -603,8 +592,10 @@ int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFant
 
         //Usar la fuente HUD local si existe, sino la pasada por parametro
         TTF_Font *fuenteParaHUD = (fuenteHudLocal ? fuenteHudLocal : fuenteHudOriginal);
-
-        dibujarTablero(sdl->renderer, laberinto, jugador, fuenteParaHUD, tamCeldaReal, offsetX, escalaTexto);
+        
+        SDL_SetWindowSize(sdl->ventana, laberinto->columnas * TAM_CELDA, MARGEN + laberinto->filas * TAM_CELDA);
+        
+        dibujarTablero(sdl, laberinto, jugador, fuenteParaHUD, TAM_CELDA, 0, escalaTexto);
 
         SDL_RenderPresent(sdl->renderer);
 
@@ -614,6 +605,9 @@ int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFant
     Mix_HaltMusic();
     Mix_FreeMusic(musica);
     musica = NULL;
+
+    SDL_SetWindowSize(sdl->ventana, Woriginal, Horiginal);
+
     //almacenarJugador(jugador);
     //almacenarPartida(jugador, cantmovimientos);
     if(estado == VICTORIA)
@@ -696,41 +690,53 @@ int realizarMovimiento(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas
 void victoria(ContextoSDL *sdl, TTF_Font *fuente, int puntaje)
 {
     SDL_Event evento;
-    int salir = 0, ancho, alto;
+    int salir = 0, actualizar = 1, ancho, alto;
     char puntajeTexto[50];
     SDL_Rect vp;
     float escalaTexto = 1.0f;
 
-    ancho = sdl->ancho;
-    alto = sdl->alto;
-
-    SDL_RenderGetViewport(sdl->renderer, &vp);
-    if (vp.w > 0 && ancho > 0)
-    {
-        escalaTexto = (float)vp.w / (float)ancho;
-        if (escalaTexto <= 0.0f)
-            escalaTexto = 1.0f;
-    }
-
-    SDL_SetRenderDrawColor(sdl->renderer, 0, 0, 80, 255);
-    SDL_RenderClear(sdl->renderer);
-
-    sprintf(puntajeTexto, "Puntaje obtenido: %d", puntaje);
-    renderizarCentrado(sdl->renderer, fuente, "Victoria!", COLOR_BLANCO, ancho, alto / 2 - 20, escalaTexto);
-    renderizarCentrado(sdl->renderer, fuente, puntajeTexto, COLOR_AMARILLO, ancho, alto / 2 + 75, escalaTexto);
-    renderizarCentrado(sdl->renderer, fuente, "Presiona ESC para salir...", COLOR_GRIS, ancho, alto + 250, escalaTexto);
-
-    SDL_RenderPresent(sdl->renderer);
-
     while(!salir)
     {
+        if (actualizar)
+        {
+            ancho = sdl->ancho;
+            alto = sdl->alto;
+
+            SDL_RenderGetViewport(sdl->renderer, &vp);
+            if (vp.w > 0 && ancho > 0)
+            {
+                escalaTexto = (float)vp.w / (float)ancho;
+                if (escalaTexto <= 0.0f)
+                    escalaTexto = 1.0f;
+            }
+
+            SDL_SetRenderDrawColor(sdl->renderer, 0, 0, 80, 255);
+            SDL_RenderClear(sdl->renderer);
+
+            sprintf(puntajeTexto, "Puntaje obtenido: %d", puntaje);
+            renderizarCentrado(sdl->renderer, fuente, "Victoria!", COLOR_BLANCO, ancho, alto / 2 - 20, escalaTexto);
+            renderizarCentrado(sdl->renderer, fuente, puntajeTexto, COLOR_AMARILLO, ancho, alto / 2 + 75, escalaTexto);
+            renderizarCentrado(sdl->renderer, fuente, "Presiona ESC para salir...", COLOR_GRIS, ancho, alto + 250, escalaTexto);
+
+            SDL_RenderPresent(sdl->renderer);
+
+            actualizar = 0;
+        }
+
         while(SDL_PollEvent(&evento))
         {
             if(evento.type == SDL_QUIT)
                 salir = 1;
             else if(evento.type == SDL_KEYDOWN && evento.key.keysym.sym == SDLK_ESCAPE)
                 salir = 1;
+            else if (evento.type == SDL_WINDOWEVENT && evento.window.event == SDL_WINDOWEVENT_RESIZED) {
+                sdl->ancho = evento.window.data1;
+                sdl->alto = evento.window.data2;
+
+                actualizar = 1;
+            }
         }
+
         SDL_Delay(50);
     }
 }
@@ -738,39 +744,51 @@ void victoria(ContextoSDL *sdl, TTF_Font *fuente, int puntaje)
 void derrota(ContextoSDL *sdl, TTF_Font *fuente)
 {
     SDL_Event evento;
-    int salir = 0, ancho, alto;
+    int salir = 0, actualizar = 1, ancho, alto;
     SDL_Rect vp;
     float escalaTexto = 1.0f;
 
-    ancho = sdl->ancho;
-    alto = sdl->alto;
-
-    SDL_RenderGetViewport(sdl->renderer, &vp);
-    if (vp.w > 0 && ancho > 0)
-    {
-        escalaTexto = (float)vp.w / (float)ancho;
-        if (escalaTexto <= 0.0f)
-            escalaTexto = 1.0f;
-    }
-
-    SDL_SetRenderDrawColor(sdl->renderer, 60, 0, 0, 255);
-    SDL_RenderClear(sdl->renderer);
-
-    renderizarCentrado(sdl->renderer, fuente, "Game over", COLOR_ROJO, ancho, alto / 2 - 20, escalaTexto);
-    renderizarCentrado(sdl->renderer, fuente, "No se obtendran puntos.", COLOR_ROJO, ancho, alto / 2 + 75, escalaTexto);
-    renderizarCentrado(sdl->renderer, fuente, "Presiona ESC para salir...", COLOR_GRIS, ancho, alto + 250, escalaTexto);
-
-    SDL_RenderPresent(sdl->renderer);
-
     while(!salir)
     {
+        if (actualizar)
+        {
+            ancho = sdl->ancho;
+            alto = sdl->alto;
+
+            SDL_RenderGetViewport(sdl->renderer, &vp);
+            if (vp.w > 0 && ancho > 0)
+            {
+                escalaTexto = (float)vp.w / (float)ancho;
+                if (escalaTexto <= 0.0f)
+                    escalaTexto = 1.0f;
+            }
+
+            SDL_SetRenderDrawColor(sdl->renderer, 60, 0, 0, 255);
+            SDL_RenderClear(sdl->renderer);
+
+            renderizarCentrado(sdl->renderer, fuente, "Game over", COLOR_ROJO, ancho, alto / 2 - 20, escalaTexto);
+            renderizarCentrado(sdl->renderer, fuente, "No se obtendran puntos.", COLOR_ROJO, ancho, alto / 2 + 75, escalaTexto);
+            renderizarCentrado(sdl->renderer, fuente, "Presiona ESC para salir...", COLOR_GRIS, ancho, alto + 250, escalaTexto);
+
+            SDL_RenderPresent(sdl->renderer);
+
+            actualizar = 0;
+        }
+
         while(SDL_PollEvent(&evento))
         {
             if(evento.type == SDL_QUIT)
                 salir = 1;
             else if(evento.type == SDL_KEYDOWN && evento.key.keysym.sym == SDLK_ESCAPE)
                 salir = 1;
+            else if (evento.type == SDL_WINDOWEVENT && evento.window.event == SDL_WINDOWEVENT_RESIZED) {
+                sdl->ancho = evento.window.data1;
+                sdl->alto = evento.window.data2;
+
+                actualizar = 1;
+            }
         }
+
         SDL_Delay(50);
     }
 }

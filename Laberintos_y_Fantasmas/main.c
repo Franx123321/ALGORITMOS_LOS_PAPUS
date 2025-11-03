@@ -259,13 +259,8 @@ int leerConfig(Configuracion *config)
         printf("\nTamaño del laberinto superior al máximo posible, revise la configuración.");
         return ERROR_CONFIG;
     }
-    if(config->columnas <= (config->filas-3))
-    {
-        printf("\nPor razones de renderizado, no puede haber mas de 3 columnas menos que la cantidad de filas, por favor cambie la configuracion.");
-        return ERROR_CONFIG;
-    }
     if(config->maxFantasmas < 1 || config->maxPremios < 1) {
-        printf("\nDebe haber al menos un fantasma o premio, revise la configuración.");
+        printf("\nDebe haber al menos un fantasma o premio, revise la configuración, no sea cobarde.");
         return ERROR_CONFIG;
     }
     if(config->maxFantasmas > (config->filas * config->columnas) / 4) {
