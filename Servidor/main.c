@@ -25,7 +25,7 @@ DWORD WINAPI atenderCliente(LPVOID arg);
        exactamente en nombre
 */
 
-HANDLE hArchivoMutex = NULL;
+HANDLE hArchivoMutex = NULL; 
 
 
 int main()

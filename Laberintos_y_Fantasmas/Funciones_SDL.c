@@ -13,8 +13,8 @@ int inicializarSDL(ContextoSDL *sdl, const Configuracion *config)
         return ERROR_SDL;
     }
 
-    ancho = MAX(INI_ANCHO, config->columnas * TAM_CELDA)*1.4;
-    alto = MAX(INI_ALTO, config->filas * TAM_CELDA + MARGEN)*1.4;
+    ancho = INI_ANCHO;
+    alto = INI_ALTO;
 
     if (SDL_Init(SDL_INIT_VIDEO) < 0)
     {

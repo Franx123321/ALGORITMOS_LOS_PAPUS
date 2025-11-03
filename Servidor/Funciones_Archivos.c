@@ -43,11 +43,12 @@ int almacenarJugador(Usuario *j, tArbolBinBusq *arbol, HANDLE mutexArbol)
     return TODO_BIEN;
 }
 
+
 int cargarDatosEnArch(FILE *pf, Usuario *j, const void *dato) {
     Induser *cdato = (Induser *)dato;
     Usuario user;
 
-    fseek(pf, cdato->offset - sizeof(Usuario), SEEK_SET);
+    fseek(pf, cdato->offset, SEEK_SET);
     fread(&user, sizeof(Usuario), 1, pf);
 
     user.p_total += j->p_total; //le sumo el puntaje que obtuvo en la ultima partida
@@ -60,15 +61,21 @@ int cargarDatosEnArch(FILE *pf, Usuario *j, const void *dato) {
     return TODO_BIEN;
 }
 
+
 void cargarIndiceDesdeArchivo(tArbolBinBusq *p, FILE *pf){
     Usuario user;
     Induser idx;
+    long offset;
 
     rewind(pf);
 
-    while(fread(&user, sizeof(Usuario), 1, pf)){
+    while(1)
+    {
+        offset = ftell(pf);
+        if(fread(&user, sizeof(Usuario), 1, pf) != 1)
+            break;
         strcpy(idx.nombre, user.nombre);
-        idx.offset = ftell(pf);
+        idx.offset = offset;
         insertarEnArbolOrdenado(p, &idx, sizeof(Induser), comparacionIndexes);
     }
 }

@@ -55,9 +55,9 @@
 
 #define MIN_ANCHO 300
 #define MIN_ALTO 300
-#define INI_ANCHO 960
-#define INI_ALTO 580
-#define TAM_CELDA 29 //Tamaño en pixeles
+#define INI_ANCHO 1360
+#define INI_ALTO 800
+#define TAM_CELDA 28 //Tamaño en pixeles
 #define MARGEN 48    //Margen superior para el HUD
 
 #define ERROR_ARCH 0
@@ -76,10 +76,10 @@
 #define COLOR_GRIS (SDL_Color){128, 128, 128, 255}
 #define COLOR_VERDE (SDL_Color){0,255,0,255}
 
-
 #define DISTANCIA(X1, Y1, X2, Y2) (abs(X1 - X2) + abs(Y1 - Y2))
 #define DISTANCIA_MINIMA_ENTRADA_SALIDA 3
 #define DISTANCIA_MINIMA_ENTRE_OBJETOS 2
+
 
 typedef struct{
     char nombre[50];
