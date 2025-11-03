@@ -113,14 +113,22 @@ int moverFantasmas(Tablero *laberinto, Fantasma *fantasmas, Jugador *jugador, in
             fantasmas[I].posY = nY;
             laberinto->celdas[nY][nX] = 'F';
 
-            if(nX == gX && nY == gY)
+            if (nX == gX && nY == gY)
             {
                 jugador->vidas--;
-                if(jugador->vidas <= 0)
+
+                if (jugador->vidas <= 0)
                     return DERROTA;
 
                 fantasmas[I].vivo = 0;
-                laberinto->celdas[nY][nX] = 'J';
+
+
+                laberinto->celdas[nY][nX] = ' ';
+
+                laberinto->celdas[jugador->posY][jugador->posX] = ' ';
+                jugador->posX = 0;
+                jugador->posY = 1;
+                laberinto->celdas[jugador->posY][jugador->posX] = 'J';
             }
         }
 
@@ -625,57 +633,62 @@ int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFant
 
 int realizarMovimiento(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFantasmas, char direccion)
 {
-    int nuevaFila = jugador->posY,
-        nuevaColumna = jugador->posX,
-        fantasmaBuscado,
-        puntosGanados;
+    int nuevaFila = jugador->posY;
+    int nuevaColumna = jugador->posX;
+    int fantasmaBuscado;
+    int puntosGanados;
 
     if (!laberinto || !jugador || !fantasmas || !laberinto->celdas || maxFantasmas <= 0)
         return ERROR_MEMORIA;
 
-    switch(direccion = tolower(direccion))
+    switch (tolower(direccion))
     {
-        case 'w': nuevaFila--;
-                  break;
-        case 's': nuevaFila++;
-                  break;
-        case 'a': nuevaColumna--;
-                  break;
-        case 'd': nuevaColumna++;
-                  break;
+        case 'w': nuevaFila--; break;
+        case 's': nuevaFila++; break;
+        case 'a': nuevaColumna--; break;
+        case 'd': nuevaColumna++; break;
         default: return MOV_INVALIDO;
     }
 
-    if(nuevaFila < 0 || nuevaFila >= laberinto->filas
-        || nuevaColumna < 0 || nuevaColumna >= laberinto->columnas)
+    if (nuevaFila < 0 || nuevaFila >= laberinto->filas ||
+        nuevaColumna < 0 || nuevaColumna >= laberinto->columnas)
         return MOV_INVALIDO;
 
-    if(laberinto->celdas[nuevaFila][nuevaColumna] == '#')
+    if (laberinto->celdas[nuevaFila][nuevaColumna] == '#')
         return MOV_INVALIDO;
 
-    if(laberinto->celdas[nuevaFila][nuevaColumna] == 'S')
+    if (laberinto->celdas[nuevaFila][nuevaColumna] == 'S')
         return VICTORIA;
 
-    if(laberinto->celdas[nuevaFila][nuevaColumna] == 'F')
-    {
-        fantasmaBuscado = encontrarFantasma(fantasmas, maxFantasmas, nuevaColumna, nuevaFila);
-        if(fantasmaBuscado != -1)
-            fantasmas[fantasmaBuscado].vivo = 0;
-
-        jugador->vidas--;
-        if(jugador->vidas <= 0)
-            return DERROTA;
-    }
-
-    if(laberinto->celdas[nuevaFila][nuevaColumna] == 'V')
+    if (laberinto->celdas[nuevaFila][nuevaColumna] == 'V')
         jugador->vidas++;
 
-    if(laberinto->celdas[nuevaFila][nuevaColumna] == 'P')
+    if (laberinto->celdas[nuevaFila][nuevaColumna] == 'P')
     {
         puntosGanados = MIN_PUNTOS + rand() % (MAX_PUNTOS - MIN_PUNTOS + 1);
         jugador->puntaje += puntosGanados;
     }
 
+    if (laberinto->celdas[nuevaFila][nuevaColumna] == 'F')
+    {
+        fantasmaBuscado = encontrarFantasma(fantasmas, maxFantasmas, nuevaColumna, nuevaFila);
+        if (fantasmaBuscado != -1)
+            fantasmas[fantasmaBuscado].vivo = 0;
+
+        jugador->vidas--;
+
+        if (jugador->vidas <= 0)
+            return DERROTA;
+
+        laberinto->celdas[nuevaFila][nuevaColumna] = ' ';
+
+        laberinto->celdas[jugador->posY][jugador->posX] = ' '; 
+        jugador->posY = 1;
+        jugador->posX = 0;
+        laberinto->celdas[jugador->posY][jugador->posX] = 'J';
+
+        return MOV_VALIDO;
+    }
 
     laberinto->celdas[jugador->posY][jugador->posX] = ' ';
     jugador->posY = nuevaFila;

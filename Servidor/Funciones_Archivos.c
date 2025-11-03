@@ -29,6 +29,7 @@ int almacenarJugador(Usuario *j, tArbolBinBusq *arbol, HANDLE mutexArbol)
         offset = ftell(uf);
 
         j->id_jugador = contarNodosArbol(arbol) + 1;
+        j->partidas_jugadas=1;
         fwrite(j, sizeof(Usuario), 1, uf);
 
         nuevo.Id = j->id_jugador;
