@@ -157,7 +157,6 @@ int main()
 
                 if(EstadoJuego == VICTORIA && sock!=INVALID_SOCKET)
                     enviarDatosAlServidor(sock, jugador.nombre, jugador.puntaje, cantmovimientos);
-                    
             }
         opMenu = menu(&sdl);
     }

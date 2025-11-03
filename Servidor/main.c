@@ -240,13 +240,15 @@ DWORD WINAPI atenderCliente(LPVOID arg)
                 WaitForSingleObject(hArchivoMutex, INFINITE);
 
                 archjugadores = fopen("jugadores.dat", "rb");
-                if(!archjugadores) {
+                if(!archjugadores) 
+                {
                     printf("Error al abrir archivo de jugadores para ranking\n");
                     ReleaseMutex(hArchivoMutex);
                     continue;
                 }
 
-                while(fread(&user, sizeof(Usuario), 1, archjugadores) == 1) {
+                while(fread(&user, sizeof(Usuario), 1, archjugadores) == 1) 
+                {
                     sprintf(mensaje, "%d|%s|%d|%d;", user.id_jugador , user.nombre, user.p_total, user.partidas_jugadas);
                     send(cliente, mensaje, strlen(mensaje), 0);
                 }
@@ -306,13 +308,12 @@ DWORD WINAPI atenderCliente(LPVOID arg)
 int procesarYGuardarDatos(const char* buffer, tArbolBinBusq *arbol, HANDLE mutexArbol) 
 {
     char nombre[MAX_NOMBRE];
-    int puntuacion, movimientos, cantPartidas;
+    int puntuacion, movimientos;
     Partida partida;
     Usuario jugador;
     int resultado = 0;
 
-    printf("DEBUG: mensaje recibido -> '%s'\n", buffer);
-    if(sscanf(buffer, "%[^|]|%d|%d|%d", nombre, &puntuacion, &movimientos, &cantPartidas) != 4) 
+    if(sscanf(buffer, "%[^|]|%d|%d;", nombre, &puntuacion, &movimientos) != 3) 
     {
         printf("Error: formato de mensaje invalido\n");
         return 0;
@@ -337,7 +338,7 @@ int procesarYGuardarDatos(const char* buffer, tArbolBinBusq *arbol, HANDLE mutex
     strncpy(jugador.nombre, nombre, MAX_NOMBRE - 1);
     jugador.nombre[MAX_NOMBRE - 1] = '\0';
     jugador.p_total = puntuacion;
-    jugador.partidas_jugadas = cantPartidas;
+
     // Proteger acceso al archivo
     WaitForSingleObject(hArchivoMutex, INFINITE);
 

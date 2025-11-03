@@ -33,7 +33,8 @@ void verRanking(tLista* ranking, SOCKET *sock) {
         buffer[bytes] = '\0';
 
         // Evitamos desbordar acumulador
-        if (strlen(acumulador) + strlen(buffer) >= sizeof(acumulador) - 1) {
+        if (strlen(acumulador) + strlen(buffer) >= sizeof(acumulador) - 1) 
+        {
             printf("Advertencia: datos de ranking demasiado grandes, truncando.\n");
             strncat(acumulador, buffer, sizeof(acumulador) - strlen(acumulador) - 1);
             break;
@@ -79,14 +80,16 @@ void mostrarRankingSDL(ContextoSDL *sdl, TTF_Font *fuente, tLista *ranking)
 {
     SDL_Renderer *renderer = sdl->renderer;
     SDL_Event e;
-    int ejecutando = 1;
-    int scroll = 0;
+    SDL_Surface *suf;
+    SDL_Texture *tex;
+    SDL_Rect rCerrar;
+    int ejecutando = 1, scroll = 0, y, index, total = 0, k, textW = 0, textH = 0, mx, my;
+    float trackH, barraH, barraY;
     const int visible = 8;
-    int total = 0;
+    const char *cerrar = "X";
+    char sRank[16], nameTrunc[64], sID[32], sP[32], sGames[32];
     tNodo *act = *ranking;
-
-    // Contar jugadores
-    while (act) { total++; act = act->sig; }
+    Usuario *u;
 
     // --- Definición de columnas ---
     const float esc = 1.3f; // tabla 30% más ancha
@@ -106,12 +109,19 @@ void mostrarRankingSDL(ContextoSDL *sdl, TTF_Font *fuente, tLista *ranking)
     const int colIDX    = colRankX + colRankW + 10;
     const int colNameX  = colIDX + colIDW + 15;
     const int colGamesX = colNameX + colNameW - 15; // más atrás
-    const int colScoreX = colGamesX + colGamesW + 45; // más adelante
+    const int colScoreX = colGamesX + colGamesW + 85; // más adelante
 
     // Posiciones verticales
     const int headerY = 140;
     const int startY  = 215;
     const int rowHeight = 48;
+
+    // Contar jugadores
+    while (act) 
+    { 
+        total++; 
+        act = act->sig; 
+    }
 
     while (ejecutando)
     {
@@ -119,10 +129,12 @@ void mostrarRankingSDL(ContextoSDL *sdl, TTF_Font *fuente, tLista *ranking)
         SDL_RenderClear(renderer);
 
         // --- BOTÓN "X" ---
-        const char *cerrar = "X";
-        SDL_Surface *suf = TTF_RenderText_Solid(fuente, cerrar, COLOR_VERDE);
-        SDL_Texture *tex = SDL_CreateTextureFromSurface(renderer, suf);
-        SDL_Rect rCerrar = { sdl->ancho - suf->w - 30, 30, suf->w, suf->h };
+        suf = TTF_RenderText_Solid(fuente, cerrar, COLOR_VERDE);
+        tex = SDL_CreateTextureFromSurface(renderer, suf);
+        rCerrar.x = sdl->ancho - suf->w - 30;
+        rCerrar.y = 30;
+        rCerrar.w = suf->w;
+        rCerrar.h = suf->h;
         SDL_RenderCopy(renderer, tex, NULL, &rCerrar);
         SDL_FreeSurface(suf);
         SDL_DestroyTexture(tex);
@@ -136,11 +148,8 @@ void mostrarRankingSDL(ContextoSDL *sdl, TTF_Font *fuente, tLista *ranking)
         SDL_FreeSurface(suf);
         SDL_DestroyTexture(tex);
 
-        // --- CABECERAS ---
-        SDL_Color hc = COLOR_AMARILLO;
-
         // ID
-        suf = TTF_RenderText_Solid(fuente, "ID", hc);
+        suf = TTF_RenderText_Solid(fuente, "ID", COLOR_AMARILLO);
         tex = SDL_CreateTextureFromSurface(renderer, suf);
         SDL_Rect r = { colIDX + (colIDW - suf->w) / 2, headerY, suf->w, suf->h };
         SDL_RenderCopy(renderer, tex, NULL, &r);
@@ -148,49 +157,41 @@ void mostrarRankingSDL(ContextoSDL *sdl, TTF_Font *fuente, tLista *ranking)
         SDL_DestroyTexture(tex);
 
         // NOMBRE
-        suf = TTF_RenderText_Solid(fuente, "NOMBRE", hc);
+        suf = TTF_RenderText_Solid(fuente, "NOMBRE", COLOR_AMARILLO);
         tex = SDL_CreateTextureFromSurface(renderer, suf);
         r = (SDL_Rect){ colNameX + (colNameW - suf->w) / 2, headerY, suf->w, suf->h };
         SDL_RenderCopy(renderer, tex, NULL, &r);
         SDL_FreeSurface(suf);
         SDL_DestroyTexture(tex);
 
-        // N arriba
-        suf = TTF_RenderText_Solid(fuente, "CANT", hc);
+        // PARTIDAS 
+        suf = TTF_RenderText_Solid(fuente, "PARTIDAS", COLOR_AMARILLO);
         tex = SDL_CreateTextureFromSurface(renderer, suf);
-        SDL_Rect rN = { colGamesX + (colGamesW - suf->w) / 2, headerY - 10, suf->w, suf->h };
-        SDL_RenderCopy(renderer, tex, NULL, &rN);
-        SDL_FreeSurface(suf);
-        SDL_DestroyTexture(tex);
-
-        // PARTIDAS debajo
-        suf = TTF_RenderText_Solid(fuente, "PARTIDAS", hc);
-        tex = SDL_CreateTextureFromSurface(renderer, suf);
-        SDL_Rect rPart = { colGamesX + (colGamesW - suf->w) / 2, headerY + 30, suf->w, suf->h };
-        SDL_RenderCopy(renderer, tex, NULL, &rPart);
+        r = (SDL_Rect){ colGamesX + (colGamesW - suf->w) / 2, headerY, suf->w, suf->h };
+        SDL_RenderCopy(renderer, tex, NULL, &r);
         SDL_FreeSurface(suf);
         SDL_DestroyTexture(tex);
 
         // PUNTAJE
-        suf = TTF_RenderText_Solid(fuente, "PUNTAJE", hc);
+        suf = TTF_RenderText_Solid(fuente, "PUNTAJE", COLOR_AMARILLO);
         tex = SDL_CreateTextureFromSurface(renderer, suf);
         r = (SDL_Rect){ colScoreX + (colScoreW - suf->w) / 2, headerY, suf->w, suf->h };
         SDL_RenderCopy(renderer, tex, NULL, &r);
         SDL_FreeSurface(suf);
         SDL_DestroyTexture(tex);
 
-        // --- FILAS ---
+        // FILAS
         act = *ranking;
-        for (int k = 0; k < scroll && act; k++) act = act->sig;
+        for(k = 0; k < scroll && act; k++) 
+            act = act->sig;
 
-        int y = startY;
-        int index = scroll + 1;
+        y = startY;
+        index = scroll + 1;
         while (act && index <= scroll + visible)
         {
-            Usuario *u = (Usuario *)act->dato;
+            u = (Usuario *)act->dato;
 
             // RANK
-            char sRank[16];
             snprintf(sRank, sizeof(sRank), "%d:", index);
             suf = TTF_RenderText_Solid(fuente, sRank, COLOR_BLANCO);
             tex = SDL_CreateTextureFromSurface(renderer, suf);
@@ -200,7 +201,6 @@ void mostrarRankingSDL(ContextoSDL *sdl, TTF_Font *fuente, tLista *ranking)
             SDL_DestroyTexture(tex);
 
             // ID
-            char sID[32];
             snprintf(sID, sizeof(sID), "%d", u->id_jugador);
             suf = TTF_RenderText_Solid(fuente, sID, COLOR_BLANCO);
             tex = SDL_CreateTextureFromSurface(renderer, suf);
@@ -210,21 +210,24 @@ void mostrarRankingSDL(ContextoSDL *sdl, TTF_Font *fuente, tLista *ranking)
             SDL_DestroyTexture(tex);
 
             // NOMBRE (truncado)
-            char nameTrunc[64];
             strncpy(nameTrunc, u->nombre, sizeof(nameTrunc) - 1);
             nameTrunc[sizeof(nameTrunc) - 1] = '\0';
-            int textW = 0, textH = 0;
+            textW = 0;
+            textH = 0;
             TTF_SizeText(fuente, nameTrunc, &textW, &textH);
             int maxWidth = colGamesX - (colNameX + 10) - 10;
 
-            if (textW > maxWidth) {
+            if (textW > maxWidth) 
+            {
                 int len = strlen(nameTrunc);
-                while (len > 0) {
+                while (len > 0) 
+                {
                     nameTrunc[len--] = '\0';
                     char temp[70];
                     snprintf(temp, sizeof(temp), "%s...", nameTrunc);
                     TTF_SizeText(fuente, temp, &textW, &textH);
-                    if (textW <= maxWidth) {
+                    if (textW <= maxWidth) 
+                    {
                         strcpy(nameTrunc, temp);
                         break;
                     }
@@ -239,7 +242,6 @@ void mostrarRankingSDL(ContextoSDL *sdl, TTF_Font *fuente, tLista *ranking)
             SDL_DestroyTexture(tex);
 
             // PARTIDAS
-            char sGames[32];
             snprintf(sGames, sizeof(sGames), "%d", u->partidas_jugadas);
             suf = TTF_RenderText_Solid(fuente, sGames, COLOR_BLANCO);
             tex = SDL_CreateTextureFromSurface(renderer, suf);
@@ -249,7 +251,6 @@ void mostrarRankingSDL(ContextoSDL *sdl, TTF_Font *fuente, tLista *ranking)
             SDL_DestroyTexture(tex);
 
             // PUNTAJE
-            char sP[32];
             snprintf(sP, sizeof(sP), "%d", u->p_total);
             suf = TTF_RenderText_Solid(fuente, sP, COLOR_BLANCO);
             tex = SDL_CreateTextureFromSurface(renderer, suf);
@@ -264,10 +265,11 @@ void mostrarRankingSDL(ContextoSDL *sdl, TTF_Font *fuente, tLista *ranking)
         }
 
         // Scrollbar
-        if (total > visible) {
-            float trackH = visible * rowHeight;
-            float barraH = (float)visible / total * trackH;
-            float barraY = startY + ((float)scroll / (total - visible)) * (trackH - barraH);
+        if (total > visible) 
+        {
+            trackH = visible * rowHeight;
+            barraH = (float)visible / total * trackH;
+            barraY = startY + ((float)scroll / (total - visible)) * (trackH - barraH);
             SDL_Rect barra = { leftX + tableWidth + 10, (int)barraY, 12, (int)barraH };
             SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
             SDL_RenderFillRect(renderer, &barra);
@@ -278,16 +280,21 @@ void mostrarRankingSDL(ContextoSDL *sdl, TTF_Font *fuente, tLista *ranking)
         // Eventos
         while (SDL_PollEvent(&e))
         {
-            if (e.type == SDL_QUIT) ejecutando = 0;
-            else if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_ESCAPE) ejecutando = 0;
+            if (e.type == SDL_QUIT)
+                ejecutando = 0;
+            else if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_ESCAPE) 
+                ejecutando = 0;
             else if (e.type == SDL_MOUSEWHEEL)
             {
-                if (e.wheel.y > 0 && scroll > 0) scroll--;
-                else if (e.wheel.y < 0 && scroll + visible < total) scroll++;
+                if (e.wheel.y > 0 && scroll > 0) 
+                    scroll--;
+                else if (e.wheel.y < 0 && scroll + visible < total) 
+                    scroll++;
             }
             else if (e.type == SDL_MOUSEBUTTONDOWN && e.button.button == SDL_BUTTON_LEFT)
             {
-                int mx = e.button.x, my = e.button.y;
+                mx = e.button.x; 
+                my = e.button.y;
                 if (mx >= rCerrar.x && mx <= rCerrar.x + rCerrar.w &&
                     my >= rCerrar.y && my <= rCerrar.y + rCerrar.h)
                     ejecutando = 0;

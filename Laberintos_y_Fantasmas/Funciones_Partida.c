@@ -608,8 +608,6 @@ int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFant
 
     SDL_SetWindowSize(sdl->ventana, Woriginal, Horiginal);
 
-    //almacenarJugador(jugador);
-    //almacenarPartida(jugador, cantmovimientos);
     if(estado == VICTORIA)
         victoria(sdl, fuenteLocal, jugador->puntaje);
     else if(estado == DERROTA)
