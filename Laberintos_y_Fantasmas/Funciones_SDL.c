@@ -13,8 +13,8 @@ int inicializarSDL(ContextoSDL *sdl, const Configuracion *config)
         return ERROR_SDL;
     }
 
-    ancho = MAX(INI_ANCHO, config->columnas * TAM_CELDA);
-    alto = MAX(INI_ALTO, config->filas * TAM_CELDA + MARGEN);
+    ancho = INI_ANCHO;
+    alto = INI_ALTO;
 
     if (SDL_Init(SDL_INIT_VIDEO) < 0)
     {
@@ -51,7 +51,7 @@ int inicializarSDL(ContextoSDL *sdl, const Configuracion *config)
         return ERROR_SDL;
     }
 
-    streamSprites = SDL_RWFromFile("assets/images/SpriteAtlas.bmp", "rb");
+    streamSprites = SDL_RWFromFile("assets/images/SpriteAtlas16.bmp", "rb");
     if (!streamSprites)
     {
         printf("\nERROR al abrir archivo de sprites: %s", SDL_GetError());
@@ -76,7 +76,37 @@ int inicializarSDL(ContextoSDL *sdl, const Configuracion *config)
         return ERROR_SDL;
     }
 
-    sdl->sprites = SDL_CreateTextureFromSurface(sdl->renderer, surSprites);
+    sdl->sprites16 = SDL_CreateTextureFromSurface(sdl->renderer, surSprites);
+    SDL_FreeSurface(surSprites);
+
+    streamSprites = SDL_RWFromFile("assets/images/SpriteAtlas.bmp", "rb");
+    if (!streamSprites)
+    {
+        printf("\nERROR al abrir archivo de sprites: %s", SDL_GetError());
+
+        SDL_DestroyTexture(sdl->sprites16);
+        SDL_DestroyRenderer(sdl->renderer);
+        SDL_DestroyWindow(sdl->ventana);
+        TTF_Quit();
+        SDL_Quit();
+        return ERROR_SDL;
+    }
+
+    surSprites = SDL_LoadBMP_RW(streamSprites, 1);
+    if (!surSprites)
+    {
+        printf("\nERROR al leer archivo de sprites: %s", SDL_GetError());
+
+        SDL_RWclose(streamSprites);
+        SDL_DestroyTexture(sdl->sprites16);
+        SDL_DestroyRenderer(sdl->renderer);
+        SDL_DestroyWindow(sdl->ventana);
+        TTF_Quit();
+        SDL_Quit();
+        return ERROR_SDL;
+    }
+
+    sdl->sprites24 = SDL_CreateTextureFromSurface(sdl->renderer, surSprites);
     SDL_FreeSurface(surSprites);
 
     flags = MIX_INIT_MP3 | MIX_INIT_OGG;
@@ -85,7 +115,8 @@ int inicializarSDL(ContextoSDL *sdl, const Configuracion *config)
     if((inicializado & flags) != flags)
     {
         printf("\nERROR al inicializar SDL_mixer: %s",Mix_GetError());
-        SDL_DestroyTexture(sdl->sprites);
+        SDL_DestroyTexture(sdl->sprites16);
+        SDL_DestroyTexture(sdl->sprites24);
         SDL_DestroyRenderer(sdl->renderer);
         SDL_DestroyWindow(sdl->ventana);
         TTF_Quit();
@@ -97,7 +128,8 @@ int inicializarSDL(ContextoSDL *sdl, const Configuracion *config)
     {
         printf("\nERROR al inicializar el audio: %s",Mix_GetError());
         Mix_Quit();
-        SDL_DestroyTexture(sdl->sprites);
+        SDL_DestroyTexture(sdl->sprites16);
+        SDL_DestroyTexture(sdl->sprites24);
         SDL_DestroyRenderer(sdl->renderer);
         SDL_DestroyWindow(sdl->ventana);
         TTF_Quit();
@@ -132,7 +164,8 @@ int inicializarSDL(ContextoSDL *sdl, const Configuracion *config)
     {
         printf("\nERROR al cargar una fuente: %s", TTF_GetError());
         Mix_CloseAudio();
-        SDL_DestroyTexture(sdl->sprites);
+        SDL_DestroyTexture(sdl->sprites16);
+        SDL_DestroyTexture(sdl->sprites24);
         SDL_DestroyRenderer(sdl->renderer);
         SDL_DestroyWindow(sdl->ventana);
         Mix_Quit();
@@ -150,7 +183,8 @@ int inicializarSDL(ContextoSDL *sdl, const Configuracion *config)
         sdl->fuente = NULL;
 
         Mix_CloseAudio();
-        SDL_DestroyTexture(sdl->sprites);
+        SDL_DestroyTexture(sdl->sprites16);
+        SDL_DestroyTexture(sdl->sprites24);
         SDL_DestroyRenderer(sdl->renderer);
         SDL_DestroyWindow(sdl->ventana);
         Mix_Quit();
@@ -281,10 +315,16 @@ void destruirSDL(ContextoSDL *sdl)
     TTF_CloseFont(sdl->fuenteHud);
     sdl->fuenteHud = NULL;
 
-    if(sdl->sprites)
+    if(sdl->sprites16)
     {
-        SDL_DestroyTexture(sdl->sprites);
-        sdl->sprites = NULL;
+        SDL_DestroyTexture(sdl->sprites16);
+        sdl->sprites16 = NULL;
+    }
+
+    if(sdl->sprites24)
+    {
+        SDL_DestroyTexture(sdl->sprites24);
+        sdl->sprites24 = NULL;
     }
 
     if(sdl->renderer)

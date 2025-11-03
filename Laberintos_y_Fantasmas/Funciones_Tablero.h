@@ -15,7 +15,7 @@ void mezclarDirecciones(int dir[4][2]);
 int generarSalida(Tablero *laberinto);
 int guardarLaberinto(Tablero *laberinto);
 int cargarLaberinto(Tablero *laberinto, Fantasma *fantasmas, Jugador *jugador, Configuracion config);
-void dibujarTablero(ContextoSDL *sdl, Tablero *laberinto, Jugador *j, TTF_Font *fuente, int tamCelda, int offsetX, float escalaTexto);
+void dibujarTablero(ContextoSDL *sdl, Tablero *laberinto, Jugador *j, TTF_Font *fuente, int tamCelda, float escalaTexto);
 
 
 #endif // FUNCIONES_TABLERO_H_INCLUDED

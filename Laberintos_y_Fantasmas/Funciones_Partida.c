@@ -369,6 +369,8 @@ int pantallaIngresarNombre(ContextoSDL *sdl, TTF_Font *fuente, Jugador *jugador)
                 op = SALIR;
                 ejecutando = 0;
             }
+            else if (evento.type == SDL_WINDOWEVENT && evento.window.event == SDL_WINDOWEVENT_EXPOSED)
+                actualizar = 1;
             else if (evento.type == SDL_WINDOWEVENT && evento.window.event == SDL_WINDOWEVENT_RESIZED) {
                 ancho = evento.window.data1;
                 alto = evento.window.data2;
@@ -462,12 +464,14 @@ int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFant
 {
 
     char movimiento = 0, aseguradorMovimiento;
-    int estado = 1, jugando = 1, Woriginal, Horiginal, tamFuenteHudActual = 0, tamFuenteHudDeseado;
+    int estado = 1, jugando = 1, Woriginal, Horiginal, tamFuenteHudActual = 0, tamFuenteHudDeseado,
+            tamCelda = TAM_CELDA;
     float escalaTexto = 1.0f;
     TTF_Font *fuenteLocal = NULL;
     TTF_Font *fuenteHudOriginal = NULL;
     TTF_Font *fuenteHudLocal = NULL;
     SDL_Event evento;
+    SDL_Rect escritorio;
     Mix_Music *musica = NULL;
 
     if (!laberinto || !jugador || !fantasmas || !sdl || !ColaMovimientos)
@@ -481,6 +485,20 @@ int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFant
 
     SDL_GetWindowSize(sdl->ventana, &Woriginal, &Horiginal);
 
+    // Calcular altura optima de celda segun pantalla
+    if (SDL_GetDisplayUsableBounds(SDL_GetWindowDisplayIndex(sdl->ventana), &escritorio) >= 0) {
+        if (laberinto->columnas * 32 > escritorio.w || MARGEN + laberinto->filas * 32 > escritorio.h) {
+            if (laberinto->columnas * 24 > escritorio.w || MARGEN + laberinto->filas * 24 > escritorio.h)
+                tamCelda = 16;
+            else
+                tamCelda = 24;
+        }
+    }
+
+    SDL_SetWindowSize(sdl->ventana, laberinto->columnas * tamCelda, MARGEN + laberinto->filas * tamCelda);
+    SDL_SetWindowPosition(sdl->ventana, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
+    SDL_SetWindowResizable(sdl->ventana, SDL_FALSE);
+
     // Inicializar punteros locales a las fuentes iniciales (simplificar)
     if (sdl->fuente)
         fuenteLocal = sdl->fuente;
@@ -492,7 +510,7 @@ int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFant
     else
         fuenteHudOriginal = NULL;
 
-  
+
     while(jugando && estado != VICTORIA)
     {
         while(SDL_PollEvent(&evento))
@@ -566,8 +584,6 @@ int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFant
         SDL_SetRenderDrawColor(sdl->renderer, 0, 0, 0, 255);
         SDL_RenderClear(sdl->renderer);
 
-        // Valores mayores a 24 crashean todo al renderizar
-        // ciertas letras
         tamFuenteHudDeseado = 24;
 
         if (tamFuenteHudDeseado != tamFuenteHudActual)
@@ -587,10 +603,8 @@ int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFant
 
         //Usar la fuente HUD local si existe, sino la pasada por parametro
         TTF_Font *fuenteParaHUD = (fuenteHudLocal ? fuenteHudLocal : fuenteHudOriginal);
-        
-        SDL_SetWindowSize(sdl->ventana, laberinto->columnas * TAM_CELDA, MARGEN + laberinto->filas * TAM_CELDA);
-        
-        dibujarTablero(sdl, laberinto, jugador, fuenteParaHUD, TAM_CELDA, 0, escalaTexto);
+
+        dibujarTablero(sdl, laberinto, jugador, fuenteParaHUD, tamCelda, escalaTexto);
 
         SDL_RenderPresent(sdl->renderer);
 
@@ -602,6 +616,7 @@ int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFant
     musica = NULL;
 
     SDL_SetWindowSize(sdl->ventana, Woriginal, Horiginal);
+    SDL_SetWindowResizable(sdl->ventana, SDL_TRUE);
 
     if(estado == VICTORIA)
         victoria(sdl, fuenteLocal, jugador->puntaje);
@@ -722,6 +737,8 @@ void victoria(ContextoSDL *sdl, TTF_Font *fuente, int puntaje)
                 salir = 1;
             else if(evento.type == SDL_KEYDOWN && evento.key.keysym.sym == SDLK_ESCAPE)
                 salir = 1;
+            else if (evento.type == SDL_WINDOWEVENT && evento.window.event == SDL_WINDOWEVENT_EXPOSED)
+                actualizar = 1;
             else if (evento.type == SDL_WINDOWEVENT && evento.window.event == SDL_WINDOWEVENT_RESIZED) {
                 sdl->ancho = evento.window.data1;
                 sdl->alto = evento.window.data2;
@@ -774,6 +791,8 @@ void derrota(ContextoSDL *sdl, TTF_Font *fuente)
                 salir = 1;
             else if(evento.type == SDL_KEYDOWN && evento.key.keysym.sym == SDLK_ESCAPE)
                 salir = 1;
+            else if (evento.type == SDL_WINDOWEVENT && evento.window.event == SDL_WINDOWEVENT_EXPOSED)
+                actualizar = 1;
             else if (evento.type == SDL_WINDOWEVENT && evento.window.event == SDL_WINDOWEVENT_RESIZED) {
                 sdl->ancho = evento.window.data1;
                 sdl->alto = evento.window.data2;

@@ -1,4 +1,4 @@
-filas=15
+filas=34
 columnas=50
 vidas_inicio=4
 maximo_numero_fantasmas=2

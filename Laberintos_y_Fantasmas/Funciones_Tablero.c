@@ -263,70 +263,80 @@ int guardarLaberinto(Tablero *laberinto)
 }
 
 void dibujarTablero(ContextoSDL *sdl, Tablero *laberinto, Jugador *j, TTF_Font *fuente,
-                    int tamCeldaReal, int offsetX, float escalaTexto)
+                    int tamCelda, float escalaTexto)
 {
-    int I, J;
+    int I, J, tamSprite;
     char celda, mensajeHUD[100];
     SDL_Rect recta, rectaDest;
+    SDL_Texture *sprites;
 
     if(!laberinto || !laberinto->celdas || !sdl->renderer || !fuente)
         return;
+
+    sprites = sdl->sprites16;
+    tamSprite = 16;
+    if (tamCelda % 24 == 0) {
+        sprites = sdl->sprites24;
+        tamSprite = 24;
+    }
 
     for(I = 0; I < laberinto->filas; I++)
     {
         for(J = 0; J < laberinto->columnas; J++)
         {
-            rectaDest.x = offsetX + J * tamCeldaReal;
-            rectaDest.y = I * tamCeldaReal + MARGEN;
-            rectaDest.w = tamCeldaReal;
-            rectaDest.h = tamCeldaReal;
+            rectaDest.x = J * tamCelda;
+            rectaDest.y = I * tamCelda + MARGEN;
+            rectaDest.w = tamCelda;
+            rectaDest.h = tamCelda;
 
             celda = laberinto->celdas[I][J];
 
-            recta.x = celda == '#' ? 24 : 0;
-            recta.y = 0;
-            recta.w = 24;
-            recta.h = 24;
+            SDL_SetTextureScaleMode(sprites, SDL_ScaleModeNearest);
 
-            SDL_RenderCopy(sdl->renderer, sdl->sprites, &recta, &rectaDest);
+            recta.x = celda == '#' ? tamSprite : 0;
+            recta.y = 0;
+            recta.w = tamSprite;
+            recta.h = tamSprite;
+
+            SDL_RenderCopy(sdl->renderer, sprites, &recta, &rectaDest);
 
             if (celda == 'E') {
-                recta.x = 48;
+                recta.x = tamSprite * 2;
                 recta.y = 0;
-                SDL_RenderCopy(sdl->renderer, sdl->sprites, &recta, &rectaDest);
+                SDL_RenderCopy(sdl->renderer, sprites, &recta, &rectaDest);
             }
             else if (celda == 'S') {
-                recta.x = 72;
+                recta.x = tamSprite * 3;
                 recta.y = 0;
-                SDL_RenderCopy(sdl->renderer, sdl->sprites, &recta, &rectaDest);
+                SDL_RenderCopy(sdl->renderer, sprites, &recta, &rectaDest);
             }
             else if (celda == 'J') {
                 recta.x = 0;
-                recta.y = 24;
-                SDL_RenderCopy(sdl->renderer, sdl->sprites, &recta, &rectaDest);
+                recta.y = tamSprite;
+                SDL_RenderCopy(sdl->renderer, sprites, &recta, &rectaDest);
             }
             else if (celda == 'F') {
-                recta.x = 24;
-                recta.y = 24;
-                SDL_RenderCopy(sdl->renderer, sdl->sprites, &recta, &rectaDest);
+                recta.x = tamSprite * 1;
+                recta.y = tamSprite;
+                SDL_RenderCopy(sdl->renderer, sprites, &recta, &rectaDest);
             }
             else if (celda == 'V') {
-                recta.x = 72;
-                recta.y = 24;
-                SDL_RenderCopy(sdl->renderer, sdl->sprites, &recta, &rectaDest);
+                recta.x = tamSprite * 3;
+                recta.y = tamSprite;
+                SDL_RenderCopy(sdl->renderer, sprites, &recta, &rectaDest);
             }
             else if (celda == 'P') {
-                recta.x = 48;
-                recta.y = 24;
-                SDL_RenderCopy(sdl->renderer, sdl->sprites, &recta, &rectaDest);
+                recta.x = tamSprite * 2;
+                recta.y = tamSprite;
+                SDL_RenderCopy(sdl->renderer, sprites, &recta, &rectaDest);
             }
         }
     }
 
     sprintf(mensajeHUD, "Vidas: %d", j->vidas);
-    renderizarHUD(sdl->renderer, fuente, mensajeHUD, COLOR_AZUL, offsetX + 6, 9, escalaTexto);
+    renderizarHUD(sdl->renderer, fuente, mensajeHUD, COLOR_AZUL, 6, 9, escalaTexto);
     sprintf(mensajeHUD, "Puntaje: %d", j->puntaje);
-    renderizarHUD(sdl->renderer, fuente, mensajeHUD, COLOR_AZUL, offsetX + 128, 9, escalaTexto);
+    renderizarHUD(sdl->renderer, fuente, mensajeHUD, COLOR_AZUL, 128, 9, escalaTexto);
     sprintf(mensajeHUD, "Jugador: %s", j->nombre);
-    renderizarHUD(sdl->renderer, fuente, mensajeHUD, COLOR_AZUL, offsetX + 287, 9, escalaTexto);
+    renderizarHUD(sdl->renderer, fuente, mensajeHUD, COLOR_AZUL, 287, 9, escalaTexto);
 }

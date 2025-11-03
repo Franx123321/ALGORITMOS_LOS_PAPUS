@@ -205,11 +205,11 @@ int leerConfig(Configuracion *config)
 
     // Chequeo de rangos
     if(config->filas < MIN_FILAS || config->columnas < MIN_COLUMNAS) {
-        printf("\nTamaño del laberinto inferior al mínimo posible, revise la configuración.");
+        printf("\nTamaño del laberinto inferior al mínimo posible (%dx%d), revise la configuración.", MIN_FILAS, MIN_COLUMNAS);
         return ERROR_CONFIG;
     }
     if(config->filas > MAX_FILAS || config->columnas > MAX_COLUMNAS) {
-        printf("\nTamaño del laberinto superior al máximo posible, revise la configuración.");
+        printf("\nTamaño del laberinto superior al máximo posible (%dx%d), revise la configuración.", MAX_FILAS, MAX_COLUMNAS);
         return ERROR_CONFIG;
     }
     if(config->maxFantasmas < 1 || config->maxPremios < 1) {
