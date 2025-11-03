@@ -9,13 +9,13 @@ int cmpPuntajeDesc(const void *a, const void *b) {
 
 void printUsuario(const void *dato) {
     const Usuario *user = (const Usuario *)dato;
-    printf("ID: %d | Nombre: %s | Puntaje Total: %d\n", user->id_jugador, user->nombre, user->p_total);
+    printf("ID: %d | Nombre: %s | Puntaje Total: %d| PartidasJugadas: %d\n", user->id_jugador, user->nombre, user->p_total, user->partidas_jugadas);
 }
 
 
 void verRanking(tLista* ranking, SOCKET *sock) {
     char buffer[512], nombre[50], acumulador[4096] = "";
-    int bytes, id, puntaje;
+    int bytes, id, puntaje, cantPartidas;
 
     Usuario user;
 
@@ -54,12 +54,14 @@ void verRanking(tLista* ranking, SOCKET *sock) {
         strcpy(nombre, "");
         id = 0;
         puntaje = 0;
+        cantPartidas=0;
 
-        if (sscanf(token, "%d|%49[^|]|%d", &id, nombre, &puntaje) == 3) {
+        if (sscanf(token, "%d|%49[^|]|%d|%d", &id, nombre, &puntaje,&cantPartidas) == 4) {
             user.id_jugador = id;
             strncpy(user.nombre, nombre, sizeof(user.nombre) - 1);
             user.nombre[sizeof(user.nombre) - 1] = '\0';
             user.p_total = puntaje;
+            user.partidas_jugadas=cantPartidas;
 
             // Se inserta una copia del usuario
             if (!insertarOrdenadoSinDup(ranking, &user, sizeof(Usuario), cmpPuntajeDesc, NULL)) {
@@ -72,7 +74,6 @@ void verRanking(tLista* ranking, SOCKET *sock) {
         token = strtok(NULL, ";");
     }
 }
-
 
 void mostrarRankingSDL(ContextoSDL *sdl, TTF_Font *fuente, tLista *ranking)
 {
@@ -88,24 +89,28 @@ void mostrarRankingSDL(ContextoSDL *sdl, TTF_Font *fuente, tLista *ranking)
     while (act) { total++; act = act->sig; }
 
     // --- Definición de columnas ---
-    const int colRankW = 60;    // columna para "1:"
-    const int colIDW   = 80;    // ID
-    const int colNameW = 360;   // NOMBRE
-    const int colScoreW = 120;  // PUNTAJE
+    const float esc = 1.3f; // tabla 30% más ancha
+    const int colRankW   = (int)(60 * esc);
+    const int colIDW     = (int)(90 * esc);
+    const int colNameW   = (int)(330 * esc);
+    const int colGamesW  = (int)(140 * esc);
+    const int colScoreW  = (int)(150 * esc);
 
-    // Calcular ancho total real y centrado
-    const int tableWidth = colRankW + 10 + colIDW + 20 + colNameW + 20 + colScoreW;
+    // Calcular ancho total y centrado
+    const int tableWidth = colRankW + 10 + colIDW + 20 + colNameW + 20 + colGamesW + 20 + colScoreW;
     const int leftX = (sdl->ancho - tableWidth) / 2;
     const int centerX = sdl->ancho / 2;
 
-    // Posiciones de cada columna
+    // Posiciones de columnas con más espacio entre PARTIDAS y PUNTAJE
     const int colRankX  = leftX;
     const int colIDX    = colRankX + colRankW + 10;
-    const int colNameX  = colIDX + colIDW + 20;
-    const int colScoreX = colNameX + colNameW + 20;
+    const int colNameX  = colIDX + colIDW + 15;
+    const int colGamesX = colNameX + colNameW - 15; // más atrás
+    const int colScoreX = colGamesX + colGamesW + 45; // más adelante
 
+    // Posiciones verticales
     const int headerY = 140;
-    const int startY  = 180;
+    const int startY  = 215;
     const int rowHeight = 48;
 
     while (ejecutando)
@@ -113,7 +118,7 @@ void mostrarRankingSDL(ContextoSDL *sdl, TTF_Font *fuente, tLista *ranking)
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderClear(renderer);
 
-        // --- BOTÓN "X" ARRIBA A LA DERECHA ---
+        // --- BOTÓN "X" ---
         const char *cerrar = "X";
         SDL_Surface *suf = TTF_RenderText_Solid(fuente, cerrar, COLOR_VERDE);
         SDL_Texture *tex = SDL_CreateTextureFromSurface(renderer, suf);
@@ -122,7 +127,7 @@ void mostrarRankingSDL(ContextoSDL *sdl, TTF_Font *fuente, tLista *ranking)
         SDL_FreeSurface(suf);
         SDL_DestroyTexture(tex);
 
-        // --- TÍTULO "RANKING" ---
+        // --- TÍTULO ---
         const char *titulo = "RANKING";
         suf = TTF_RenderText_Solid(fuente, titulo, COLOR_ROJO);
         tex = SDL_CreateTextureFromSurface(renderer, suf);
@@ -145,32 +150,46 @@ void mostrarRankingSDL(ContextoSDL *sdl, TTF_Font *fuente, tLista *ranking)
         // NOMBRE
         suf = TTF_RenderText_Solid(fuente, "NOMBRE", hc);
         tex = SDL_CreateTextureFromSurface(renderer, suf);
-        r.x = colNameX + (colNameW - suf->w) / 2; r.y = headerY;
-        r.w = suf->w; r.h = suf->h;
+        r = (SDL_Rect){ colNameX + (colNameW - suf->w) / 2, headerY, suf->w, suf->h };
         SDL_RenderCopy(renderer, tex, NULL, &r);
+        SDL_FreeSurface(suf);
+        SDL_DestroyTexture(tex);
+
+        // N arriba
+        suf = TTF_RenderText_Solid(fuente, "CANT", hc);
+        tex = SDL_CreateTextureFromSurface(renderer, suf);
+        SDL_Rect rN = { colGamesX + (colGamesW - suf->w) / 2, headerY - 10, suf->w, suf->h };
+        SDL_RenderCopy(renderer, tex, NULL, &rN);
+        SDL_FreeSurface(suf);
+        SDL_DestroyTexture(tex);
+
+        // PARTIDAS debajo
+        suf = TTF_RenderText_Solid(fuente, "PARTIDAS", hc);
+        tex = SDL_CreateTextureFromSurface(renderer, suf);
+        SDL_Rect rPart = { colGamesX + (colGamesW - suf->w) / 2, headerY + 30, suf->w, suf->h };
+        SDL_RenderCopy(renderer, tex, NULL, &rPart);
         SDL_FreeSurface(suf);
         SDL_DestroyTexture(tex);
 
         // PUNTAJE
         suf = TTF_RenderText_Solid(fuente, "PUNTAJE", hc);
         tex = SDL_CreateTextureFromSurface(renderer, suf);
-        r.x = colScoreX + (colScoreW - suf->w) / 2; r.y = headerY;
-        r.w = suf->w; r.h = suf->h;
+        r = (SDL_Rect){ colScoreX + (colScoreW - suf->w) / 2, headerY, suf->w, suf->h };
         SDL_RenderCopy(renderer, tex, NULL, &r);
         SDL_FreeSurface(suf);
         SDL_DestroyTexture(tex);
 
-        // --- MOSTRAR FILAS ---
+        // --- FILAS ---
         act = *ranking;
         for (int k = 0; k < scroll && act; k++) act = act->sig;
 
         int y = startY;
         int index = scroll + 1;
-        for (int i = 0; i < visible && act; i++, index++)
+        while (act && index <= scroll + visible)
         {
             Usuario *u = (Usuario *)act->dato;
 
-            // columna N° (ej: "1:")
+            // RANK
             char sRank[16];
             snprintf(sRank, sizeof(sRank), "%d:", index);
             suf = TTF_RenderText_Solid(fuente, sRank, COLOR_BLANCO);
@@ -185,45 +204,46 @@ void mostrarRankingSDL(ContextoSDL *sdl, TTF_Font *fuente, tLista *ranking)
             snprintf(sID, sizeof(sID), "%d", u->id_jugador);
             suf = TTF_RenderText_Solid(fuente, sID, COLOR_BLANCO);
             tex = SDL_CreateTextureFromSurface(renderer, suf);
-            rc.x = colIDX + (colIDW - suf->w) / 2; rc.y = y;
-            rc.w = suf->w; rc.h = suf->h;
+            rc = (SDL_Rect){ colIDX + (colIDW - suf->w) / 2, y, suf->w, suf->h };
             SDL_RenderCopy(renderer, tex, NULL, &rc);
             SDL_FreeSurface(suf);
             SDL_DestroyTexture(tex);
 
-            // --- NOMBRE (truncado dinámicamente con "...") ---
-            char nameTrunc[128];
+            // NOMBRE (truncado)
+            char nameTrunc[64];
             strncpy(nameTrunc, u->nombre, sizeof(nameTrunc) - 1);
             nameTrunc[sizeof(nameTrunc) - 1] = '\0';
-
             int textW = 0, textH = 0;
             TTF_SizeText(fuente, nameTrunc, &textW, &textH);
+            int maxWidth = colGamesX - (colNameX + 10) - 10;
 
-            // espacio disponible antes del puntaje
-            int maxWidth = colScoreX - (colNameX + 10) - 10; // 10px margen
-
-            if (textW > maxWidth)
-            {
-                // recortar hasta que entre el texto + "..."
+            if (textW > maxWidth) {
                 int len = strlen(nameTrunc);
-                while (len > 0)
-                {
-                    nameTrunc[len] = '\0';
-                    char temp[128];
-                    snprintf(temp, sizeof(temp) + 3, "%s...", nameTrunc);
+                while (len > 0) {
+                    nameTrunc[len--] = '\0';
+                    char temp[70];
+                    snprintf(temp, sizeof(temp), "%s...", nameTrunc);
                     TTF_SizeText(fuente, temp, &textW, &textH);
                     if (textW <= maxWidth) {
                         strcpy(nameTrunc, temp);
                         break;
                     }
-                    len--;
                 }
             }
 
             suf = TTF_RenderText_Solid(fuente, nameTrunc, COLOR_BLANCO);
             tex = SDL_CreateTextureFromSurface(renderer, suf);
-            rc.x = colNameX + 10; rc.y = y;
-            rc.w = suf->w; rc.h = suf->h;
+            rc = (SDL_Rect){ colNameX + 10, y, suf->w, suf->h };
+            SDL_RenderCopy(renderer, tex, NULL, &rc);
+            SDL_FreeSurface(suf);
+            SDL_DestroyTexture(tex);
+
+            // PARTIDAS
+            char sGames[32];
+            snprintf(sGames, sizeof(sGames), "%d", u->partidas_jugadas);
+            suf = TTF_RenderText_Solid(fuente, sGames, COLOR_BLANCO);
+            tex = SDL_CreateTextureFromSurface(renderer, suf);
+            rc = (SDL_Rect){ colGamesX + (colGamesW - suf->w) / 2, y, suf->w, suf->h };
             SDL_RenderCopy(renderer, tex, NULL, &rc);
             SDL_FreeSurface(suf);
             SDL_DestroyTexture(tex);
@@ -233,19 +253,18 @@ void mostrarRankingSDL(ContextoSDL *sdl, TTF_Font *fuente, tLista *ranking)
             snprintf(sP, sizeof(sP), "%d", u->p_total);
             suf = TTF_RenderText_Solid(fuente, sP, COLOR_BLANCO);
             tex = SDL_CreateTextureFromSurface(renderer, suf);
-            rc.x = colScoreX + (colScoreW - suf->w) / 2; rc.y = y;
-            rc.w = suf->w; rc.h = suf->h;
+            rc = (SDL_Rect){ colScoreX + (colScoreW - suf->w) / 2, y, suf->w, suf->h };
             SDL_RenderCopy(renderer, tex, NULL, &rc);
             SDL_FreeSurface(suf);
             SDL_DestroyTexture(tex);
 
             y += rowHeight;
             act = act->sig;
+            index++;
         }
 
-        // --- SCROLLBAR ---
-        if (total > visible)
-        {
+        // Scrollbar
+        if (total > visible) {
             float trackH = visible * rowHeight;
             float barraH = (float)visible / total * trackH;
             float barraY = startY + ((float)scroll / (total - visible)) * (trackH - barraH);
@@ -256,7 +275,7 @@ void mostrarRankingSDL(ContextoSDL *sdl, TTF_Font *fuente, tLista *ranking)
 
         SDL_RenderPresent(renderer);
 
-        // --- EVENTOS ---
+        // Eventos
         while (SDL_PollEvent(&e))
         {
             if (e.type == SDL_QUIT) ejecutando = 0;

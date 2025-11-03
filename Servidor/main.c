@@ -275,7 +275,7 @@ DWORD WINAPI atenderCliente(LPVOID arg)
                 }
 
                 while(fread(&user, sizeof(Usuario), 1, archjugadores) == 1) {
-                    sprintf(mensaje, "%d|%s|%d;", user.id_jugador , user.nombre, user.p_total);
+                    sprintf(mensaje, "%d|%s|%d|%d;", user.id_jugador , user.nombre, user.p_total, user.partidas_jugadas);
                     send(cliente, mensaje, strlen(mensaje), 0);
                 }
 
