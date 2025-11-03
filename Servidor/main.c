@@ -235,6 +235,9 @@ DWORD WINAPI atenderCliente(LPVOID arg)
          *bienvenida = "Bienvenido al servidor de Laberintos y Fantasmas!\n";
     int bytes;
     char mensaje[TAM_BUFFER];
+    Usuario user;
+
+    FILE *archjugadores;
 
     crearCola(&datos->cola);
 
@@ -259,9 +262,35 @@ DWORD WINAPI atenderCliente(LPVOID arg)
                 printf("\nSe recibio fin, cerrando conexion con el cliente...\n");
                 break;
             }
-            //Aca irian las demas opciones para mas adelante, tal vez un "ver ranking"
 
-            // Encolar el mensaje
+            if(strcmp(buffer, "RANKING") == 0)
+            {
+                WaitForSingleObject(hArchivoMutex, INFINITE);
+
+                archjugadores = fopen("usuarios.dat", "rb");
+                if(!archjugadores) {
+                    printf("Error al abrir archivo de jugadores para ranking\n");
+                    ReleaseMutex(hArchivoMutex);
+                    continue;
+                }
+
+                while(fread(&user, sizeof(Usuario), 1, archjugadores) == 1) {
+                    sprintf(mensaje, "%d|%s|%d;", user.id_jugador , user.nombre, user.p_total);
+                    send(cliente, mensaje, strlen(mensaje), 0);
+                }
+
+                // Indicar fin del ranking
+                send(cliente, "FIN_RANKING\n", 12, 0);
+
+                    
+                
+
+                fclose(archjugadores);
+
+                ReleaseMutex(hArchivoMutex);
+                continue;
+            }
+            
             if(encolar(&datos->cola, buffer, strlen(buffer) + 1)) {
                 // Procesar todos los mensajes en la cola
                 while(!colaVacia(&datos->cola)) {

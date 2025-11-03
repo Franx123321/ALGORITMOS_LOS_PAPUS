@@ -5,6 +5,7 @@
 #include "Funciones_Tablero.h"
 #include "Funciones_Generacion.h"
 #include "Funciones_Partida.h"
+#include "Funciones_ranking.h"
 
 #define ERROR_ENVIO 0
 
@@ -22,6 +23,7 @@ int main()
     tCola ColaMovimientos;
     WSADATA wsaData;
     SOCKET sock; //No le puedo llamar socket porque asi se llama la funcion
+    int timeout = 1000; // 5 segundos
     struct sockaddr_in dirServidor;
     char buffer[256];
     int opMenu, bytesLeidos, EstadoJuego;
@@ -65,6 +67,7 @@ int main()
         WSACleanup();
         exit(1);
     }
+    setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (char*)&timeout, sizeof(timeout));
 
     dirServidor.sin_family = AF_INET;
     dirServidor.sin_port = htons(PUERTO);
@@ -131,7 +134,9 @@ int main()
     if(opMenu == 3)
         printf("\nSe selecciono salir");
     else if(opMenu == 2) //TEMPORAL
-        destruir_matriz((void **)laberinto.celdas, laberinto.filas);
+    {
+        verRanking(&sock);
+    }
     else if(opMenu == 1)
         if (pantallaIngresarNombre(&sdl, sdl.fuente, &jugador) != SALIR)
         {

@@ -82,10 +82,11 @@ int eliminarRaizArbolBinBusq(tArbolBinBusq *p){
         return 0;
 
     free((*p)->dato);
-    if((*p)->der == (*p)->izq == NULL){
+    if(!(*p)->izq && !(*p)->der)
+    {
         free(*p);
-        *p = NULL;
-        return 1;
+        *p=NULL;
+        return 1; // Eliminacion exitosa
     }
 
     remp = alturaArbolBin(&(*p)->izq) > alturaArbolBin(&(*p)->der) ? mayorNodoArbolBinBusq(&(*p)->izq) : mayorNodoArbolBinBusq(&(*p)->der);
@@ -104,7 +105,7 @@ int eliminarRaizArbolBinBusq(tArbolBinBusq *p){
 void destruirArbol(tArbolBinBusq *p){
     if(!*p)
         return;
-    
+
     destruirArbol(&(*p)->izq);
     destruirArbol(&(*p)->der);
     free((*p)->dato);
