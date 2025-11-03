@@ -107,23 +107,24 @@ int main()
     }
 
     //LOGICA DE JUEGO//
+    opMenu = menu(&sdl);
     crearCola(&ColaMovimientos);
-    while(1)
+    while(opMenu != 3 || EstadoJuego== 0)
     {
-        opMenu = menu(&sdl);
         if(opMenu == 3){
             printf("\nSe selecciono salir");
             break;
         }
-        else if(opMenu == 2)
+        else if(opMenu == 2) //TEMPORAL
         {
             crearLista(&Ranking);
             verRanking(&Ranking,&sock);
+
+
             mostrarRankingSDL(&sdl, sdl.fuente, &Ranking);
             vaciarLista(&Ranking);
         }
         else if(opMenu == 1)
-        {
             if (pantallaIngresarNombre(&sdl, sdl.fuente, &jugador) != SALIR)
             {
 
@@ -132,7 +133,8 @@ int main()
                 jugador.posY = 1;
                 jugador.posX = 0;
                 jugador.puntaje = 0;
-            
+                cantmovimientos = 0;
+
                 //TABLERO//
                 //Aca se carga el contenido del laberinto: paredes, caminos, salida, fantasmas, premios y vidas extra
                 laberinto.celdas = NULL;
@@ -146,19 +148,19 @@ int main()
                     free(fantasmas);
                     exit(1);
                 }
-            
+
                 //Aca se guarda la disposicion inicial del laberinto en un archivo de texto
                 guardarLaberinto(&laberinto);
-                
+
                 EstadoJuego = Jugar(&laberinto, &jugador, fantasmas, config.maxFantasmas, &sdl, &ColaMovimientos, &cantmovimientos);
                 if(EstadoJuego != VICTORIA && EstadoJuego != DERROTA)
                     printf("\nSe produjo un error durante el juego.");
 
                 if(EstadoJuego == VICTORIA && sock!=INVALID_SOCKET)
                     enviarDatosAlServidor(sock, jugador.nombre, jugador.puntaje, cantmovimientos);
+                    
             }
-            break;
-        }
+        opMenu = menu(&sdl);
     }
 
 

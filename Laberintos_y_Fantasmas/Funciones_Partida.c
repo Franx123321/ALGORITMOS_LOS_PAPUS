@@ -716,7 +716,7 @@ void victoria(ContextoSDL *sdl, TTF_Font *fuente, int puntaje)
             sprintf(puntajeTexto, "Puntaje obtenido: %d", puntaje);
             renderizarCentrado(sdl->renderer, fuente, "Victoria!", COLOR_BLANCO, ancho, alto / 2 - 20, escalaTexto);
             renderizarCentrado(sdl->renderer, fuente, puntajeTexto, COLOR_AMARILLO, ancho, alto / 2 + 75, escalaTexto);
-            renderizarCentrado(sdl->renderer, fuente, "Presiona ESC para salir...", COLOR_GRIS, ancho, alto + 250, escalaTexto);
+            renderizarCentrado(sdl->renderer, fuente, "Presiona ESC para volver...", COLOR_GRIS, ancho, alto + 250, escalaTexto);
 
             SDL_RenderPresent(sdl->renderer);
 
