@@ -112,3 +112,11 @@ void destruirArbol(tArbolBinBusq *p){
     free(*p);
     *p = NULL;
 }
+
+int contarNodosArbol(const tArbolBinBusq *a)
+{
+    if(!*a)
+        return 0;
+
+    return contarNodosArbol(&(*a)->izq) + contarNodosArbol(&(*a)->der) + 1;
+}
