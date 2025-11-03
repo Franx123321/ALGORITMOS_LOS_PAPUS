@@ -262,54 +262,71 @@ int guardarLaberinto(Tablero *laberinto)
     return TODO_BIEN;
 }
 
-void dibujarTablero(SDL_Renderer *renderer, Tablero *laberinto, Jugador *j, TTF_Font *fuente,
+void dibujarTablero(ContextoSDL *sdl, Tablero *laberinto, Jugador *j, TTF_Font *fuente,
                     int tamCeldaReal, int offsetX, float escalaTexto)
 {
     int I, J;
     char celda, mensajeHUD[100];
-    SDL_Rect recta;
+    SDL_Rect recta, rectaDest;
 
-    if(!laberinto || !laberinto->celdas || !renderer || !fuente)
+    if(!laberinto || !laberinto->celdas || !sdl->renderer || !fuente)
         return;
 
     for(I = 0; I < laberinto->filas; I++)
     {
         for(J = 0; J < laberinto->columnas; J++)
         {
-            recta.x = offsetX + J * tamCeldaReal;
-            recta.y = I * tamCeldaReal + MARGEN;
-            recta.w = tamCeldaReal;
-            recta.h = tamCeldaReal;
+            rectaDest.x = offsetX + J * tamCeldaReal;
+            rectaDest.y = I * tamCeldaReal + MARGEN;
+            rectaDest.w = tamCeldaReal;
+            rectaDest.h = tamCeldaReal;
 
             celda = laberinto->celdas[I][J];
 
-            //Colores para cada cosa, se pueden cambiar cambiando los parametros 2, 3 y 4
-            switch (celda)
-            {
-                case '#': SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-                          break;
-                case 'J': SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255);
-                          break;
-                case 'S': SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
-                          break;
-                case 'F': SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-                          break;
-                case 'V': SDL_SetRenderDrawColor(renderer, 128, 0, 128, 255);
-                          break;
-                case 'P': SDL_SetRenderDrawColor(renderer, 255, 215, 0, 255);
-                          break;
-                default:  SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-                          break;
-            }
+            recta.x = celda == '#' ? 24 : 0;
+            recta.y = 0;
+            recta.w = 24;
+            recta.h = 24;
 
-            SDL_RenderFillRect(renderer, &recta);
+            SDL_RenderCopy(sdl->renderer, sdl->sprites, &recta, &rectaDest);
+
+            if (celda == 'E') {
+                recta.x = 48;
+                recta.y = 0;
+                SDL_RenderCopy(sdl->renderer, sdl->sprites, &recta, &rectaDest);
+            }
+            else if (celda == 'S') {
+                recta.x = 72;
+                recta.y = 0;
+                SDL_RenderCopy(sdl->renderer, sdl->sprites, &recta, &rectaDest);
+            }
+            else if (celda == 'J') {
+                recta.x = 0;
+                recta.y = 24;
+                SDL_RenderCopy(sdl->renderer, sdl->sprites, &recta, &rectaDest);
+            }
+            else if (celda == 'F') {
+                recta.x = 24;
+                recta.y = 24;
+                SDL_RenderCopy(sdl->renderer, sdl->sprites, &recta, &rectaDest);
+            }
+            else if (celda == 'V') {
+                recta.x = 72;
+                recta.y = 24;
+                SDL_RenderCopy(sdl->renderer, sdl->sprites, &recta, &rectaDest);
+            }
+            else if (celda == 'P') {
+                recta.x = 48;
+                recta.y = 24;
+                SDL_RenderCopy(sdl->renderer, sdl->sprites, &recta, &rectaDest);
+            }
         }
     }
 
     sprintf(mensajeHUD, "Vidas: %d", j->vidas);
-    renderizarHUD(renderer, fuente, mensajeHUD, COLOR_AZUL, 10, 3, escalaTexto);
+    renderizarHUD(sdl->renderer, fuente, mensajeHUD, COLOR_AZUL, offsetX + 6, 9, escalaTexto);
     sprintf(mensajeHUD, "Puntaje: %d", j->puntaje);
-    renderizarHUD(renderer, fuente, mensajeHUD, COLOR_AZUL, 198, 3, escalaTexto);
+    renderizarHUD(sdl->renderer, fuente, mensajeHUD, COLOR_AZUL, offsetX + 128, 9, escalaTexto);
     sprintf(mensajeHUD, "Jugador: %s", j->nombre);
-    renderizarHUD(renderer, fuente, mensajeHUD, COLOR_AZUL, 423, 3, escalaTexto);
+    renderizarHUD(sdl->renderer, fuente, mensajeHUD, COLOR_AZUL, offsetX + 287, 9, escalaTexto);
 }

@@ -22,7 +22,7 @@
     #include <SDL.h>
     #include <SDL_ttf.h>
     #include <SDL_mixer.h>
-    
+
 #else
     // Linux (paquetes SDL2)
     #include <SDL2/SDL.h>
@@ -30,7 +30,7 @@
     #include <SDL2/SDL_mixer.h>
 #endif
 
-#ifdef WIN_32
+#ifdef _WIN32
     #include <windows.h>
 #else
     #include <unistd.h>
@@ -41,7 +41,7 @@
 
 #define MIN_FILAS 15
 #define MIN_COLUMNAS 15
-#define MAX_FILAS 25    //Es lo maximo que se ve bien en pantalla, igualmente depende del tamaño de la ventana y de las celdas
+#define MAX_FILAS 30    //Es lo maximo que se ve bien en pantalla, igualmente depende del tamaño de la ventana y de las celdas
 #define MAX_COLUMNAS 50 //Podria ser bastante mas, pero seria una fea relacion filas/columnas
 #define MIN_PUNTOS 10
 #define MAX_PUNTOS 50
@@ -53,10 +53,12 @@
 #define DERROTA -1
 #define SALIR 0
 
-#define MIN_ANCHO 800
-#define MIN_ALTO 600
-#define TAM_CELDA 30 //Tamaño en pixeles
-#define MARGEN 35    //Margen superior para el HUD
+#define MIN_ANCHO 300
+#define MIN_ALTO 300
+#define INI_ANCHO 1360
+#define INI_ALTO 800
+#define TAM_CELDA 28 //Tamaño en pixeles
+#define MARGEN 48    //Margen superior para el HUD
 
 #define ERROR_ARCH 0
 #define ERROR_SDL 0
@@ -72,10 +74,12 @@
 #define COLOR_AZUL (SDL_Color){0, 0, 255, 255}
 #define COLOR_AMARILLO (SDL_Color){255, 255, 0, 255}
 #define COLOR_GRIS (SDL_Color){128, 128, 128, 255}
+#define COLOR_VERDE (SDL_Color){0,255,0,255}
 
 #define DISTANCIA(X1, Y1, X2, Y2) (abs(X1 - X2) + abs(Y1 - Y2))
 #define DISTANCIA_MINIMA_ENTRADA_SALIDA 3
 #define DISTANCIA_MINIMA_ENTRE_OBJETOS 2
+
 
 typedef struct{
     char nombre[50];
@@ -118,6 +122,7 @@ typedef struct {
     SDL_Renderer *renderer;
     TTF_Font *fuente;
     TTF_Font *fuenteHud;
+    SDL_Texture *sprites;
     int ancho;
     int alto;
     int tamFuente;

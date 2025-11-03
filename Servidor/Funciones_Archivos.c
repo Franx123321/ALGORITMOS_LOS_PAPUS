@@ -7,70 +7,54 @@
 #define TODO_BIEN 1
 
 //Usuarios
-
-int almacenarJugador(Jugador *j) {
-    FILE *uf = fopen("usuarios.dat", "r+b");
+int almacenarJugador(Usuario *j, tArbolBinBusq *arbol, HANDLE mutexArbol)
+{
+    long offset;
+    Induser nuevo;
+    FILE *uf = fopen("jugadores.dat", "r+b");
     if(!uf)
-        uf = fopen("usuarios.dat", "w+b");
+        uf = fopen("jugadores.dat", "w+b");
     if(!uf)
+    {
+        ReleaseMutex(mutexArbol);
         return ERROR_APERTURA;
-
-    Usuario user;
-    tArbolBinBusq arbol;
-    tNodoArbol **iuser;
-
-    fseek(uf, 0, SEEK_END);
-    long registros = ftell(uf) / sizeof(Usuario);
-
-    if(registros == 0) {
-        user.id_jugador = 0; // Primer usuario
-        user.p_total = j->puntaje;
-        strcpy(user.nombre, j->nombre);
-        j->id = user.id_jugador;
-
-        fseek(uf, 0, SEEK_SET);
-        fwrite(&user, sizeof(Usuario), 1, uf);
-        fclose(uf);
-        return TODO_BIEN;
     }
 
-    crearArbol(&arbol); //creo el arbol
-    cargarIndiceDesdeArchivo(&arbol, uf); // Cargar el árbol con los usuarios existentes
+    tNodoArbol **iuser = buscarEnArbolNoClave(arbol, j->nombre, comparacionArbol);
 
+    if (!iuser)
+    {
+        //Nuevo jugador si no existia ya
+        fseek(uf, 0, SEEK_END); //me muevo al ultimo registro y obtengo sus datos
+        offset = ftell(uf);
 
-    iuser = buscarEnArbol(&arbol, j->nombre, comparacionArbol); // Buscar si el jugador ya existe
+        j->id_jugador = contarNodosArbol(arbol) + 1;
+        fwrite(j, sizeof(Usuario), 1, uf);
 
-    if (!iuser) {// Nuevo jugador si no existia ya
-        fseek(uf, -((long)sizeof(Usuario)), SEEK_END); //me muevo al ultimo registro y obtengo sus datos
-        fread(&user, sizeof(Usuario), 1, uf);
-        user.id_jugador++;  // El nuevo ID va a ser el siguiente del anterior
-
-        Usuario nuevo = user;
-        nuevo.p_total = j->puntaje;
-        strncpy(nuevo.nombre, j->nombre, sizeof(nuevo.nombre) - 1);
-        nuevo.nombre[sizeof(nuevo.nombre) - 1] = '\0';
-        j->id = nuevo.id_jugador;
-
-        fseek(uf, 0, SEEK_END);
-        fwrite(&nuevo, sizeof(Usuario), 1, uf);
-    } else {
+        nuevo.Id = j->id_jugador;
+        strcpy(nuevo.nombre, j->nombre);
+        nuevo.offset = offset;
+        insertarEnArbolOrdenado(arbol, &nuevo, sizeof(Induser), comparacionIndexes);
+    } else
         cargarDatosEnArch(uf, j, (*iuser)->dato); // Si ya existia voy a cargardatosenarch
-    }
 
-    destruirArbol(&arbol); //borro el arbol despues de usarlo y cierro el archivo
     fclose(uf);
+
     return TODO_BIEN;
 }
 
-int cargarDatosEnArch(FILE *pf, Jugador *j, const void *dato) {
+
+int cargarDatosEnArch(FILE *pf, Usuario *j, const void *dato)
+{
     Induser *cdato = (Induser *)dato;
     Usuario user;
 
-    fseek(pf, cdato->offset - sizeof(Usuario), SEEK_SET);
+    fseek(pf, cdato->offset, SEEK_SET);
     fread(&user, sizeof(Usuario), 1, pf);
 
-    user.p_total += j->puntaje; //le sumo el puntaje que obtuvo en la ultima partida
-    j->id = user.id_jugador;
+    user.p_total += j->p_total; //le sumo el puntaje que obtuvo en la ultima partida
+    j->id_jugador = user.id_jugador;
+    user.partidas_jugadas++;
 
     fseek(pf, -(long)sizeof(Usuario), SEEK_CUR);
     fwrite(&user, sizeof(Usuario), 1, pf);
@@ -78,18 +62,86 @@ int cargarDatosEnArch(FILE *pf, Jugador *j, const void *dato) {
     return TODO_BIEN;
 }
 
-void cargarIndiceDesdeArchivo(tArbolBinBusq *p, FILE *pf){
+
+int cargarIndiceDesdeIdx(tArbolBinBusq *p, const char *ruta)
+{
+    FILE *pf;
+    Induser idx;
+
+    pf = fopen(ruta, "rb");
+    if(!pf)
+        return 0;
+
+    while(fread(&idx, sizeof(Induser), 1, pf))
+        insertarEnArbolOrdenado(p, &idx, sizeof(Induser), comparacionIndexes);
+
+    fclose(pf);
+
+    return 1;
+}
+
+
+void cargarIndiceDesdeArchivo(tArbolBinBusq *p, FILE *pf)
+{
     Usuario user;
     Induser idx;
+    long offset;
 
     rewind(pf);
 
-    while(fread(&user, sizeof(Usuario), 1, pf)){
-        strcpy(idx.nombre, user.nombre);
-        idx.offset = ftell(pf);
+    while(1)
+    {
+        offset = ftell(pf);
+        if(fread(&user, sizeof(Usuario), 1, pf) != 1)
+            break;
+
+        idx.Id = user.id_jugador;
+        strncpy(idx.nombre, user.nombre, sizeof(idx.nombre) - 1);
+        idx.nombre[sizeof(idx.nombre) - 1] = '\0';
+        idx.offset = offset;
+
         insertarEnArbolOrdenado(p, &idx, sizeof(Induser), comparacionIndexes);
     }
 }
+
+
+int guardarIndiceEnArchivo(const char *rutaBin, const char *rutaIdx)
+{
+    FILE *bin = fopen(rutaBin, "rb");
+    FILE *ind = fopen(rutaIdx, "wb");
+    if(!bin)
+        return 0;
+    if(!ind)
+    {
+        fclose(bin);
+        return 0;
+    }
+
+    Usuario user;
+    Induser idx;
+    long offset;
+
+    rewind(bin);
+
+    while(1)
+    {
+        offset = ftell(bin);
+        if(fread(&user, sizeof(Usuario), 1, bin) != 1)
+            break;
+
+        idx.Id = user.id_jugador;
+        strncpy(idx.nombre, user.nombre, sizeof(idx.nombre) - 1);
+        idx.nombre[sizeof(idx.nombre) - 1] = '\0';
+        idx.offset = offset;
+
+        fwrite(&idx, sizeof(Induser), 1, ind);
+    }
+
+    fclose(ind);
+    fclose(bin);
+    return 1;
+}
+
 
 int comparacionArbol(const void *a, const void *b){
     const char *nombreClave = (const char *)b;
@@ -102,13 +154,17 @@ int comparacionIndexes(const void *a, const void *b){
     const Induser *ca = (const Induser*)a;
     const Induser *cb = (const Induser*)b;
 
-    return strcmp(ca->nombre, cb->nombre);
+    if(ca->Id < cb->Id)
+        return -1;
+    else if(ca->Id > cb->Id)
+        return 1;
+    return 0;
 }
 
-// Partidas
 
 
-int almacenarPartida(Jugador *j, int cantmovimientos){
+//Partida
+int almacenarPartida(Usuario *j, int cantmovimientos){
     FILE *pf = fopen("partidas.dat", "r+b");
     if(!pf)
         pf = fopen("partidas.dat", "w+b");
@@ -122,10 +178,11 @@ int almacenarPartida(Jugador *j, int cantmovimientos){
     long registros = ftell(pf);
 
     if(registros == 0){
-        datos.id_partida = 0; //le asigno id 0 y le copio los datos del jugador actual
+        datos.id_partida = 1; //le asigno id 0 y le copio los datos del jugador actual
         datos.cantidad_movimientos = cantmovimientos;
-        datos.id_usuario = j->id;
+        datos.id_usuario = j->id_jugador;
         strcpy(datos.nombre, j->nombre);
+        datos.puntaje=j->p_total;
 
         fwrite(&datos, sizeof(Partida), 1, pf); //lo escribo como nuevo registro
         fclose(pf);
@@ -136,16 +193,15 @@ int almacenarPartida(Jugador *j, int cantmovimientos){
     fread(&datos, sizeof(Partida),1, pf); //lo almaceno en la variable datos
     datos.id_partida++; //le creo el nuevo id y le coloco los datos del jugador actual
 
-    Partida nueva = datos;
-    nueva.id_usuario = j->id;
-    nueva.cantidad_movimientos = cantmovimientos;
-    strncpy(nueva.nombre, j->nombre, sizeof(nueva.nombre) - 1);
-    nueva.nombre[sizeof(nueva.nombre) - 1] = '\0';
+    datos.id_usuario = j->id_jugador;
+    datos.cantidad_movimientos = cantmovimientos;
+    strncpy(datos.nombre, j->nombre, sizeof(datos.nombre) - 1);
+    datos.nombre[sizeof(datos.nombre) - 1] = '\0';
+    datos.puntaje = j->p_total;
 
     fseek(pf, 0, SEEK_END);
     fflush(pf);
-    fwrite(&nueva, sizeof(Partida), 1, pf); // lo coloco al final
+    fwrite(&datos, sizeof(Partida), 1, pf); // lo coloco al final
     fclose(pf);
     return TODO_BIEN;
 }
-

@@ -3,8 +3,9 @@
 //FUNCIONES SDL//
 int inicializarSDL(ContextoSDL *sdl, const Configuracion *config)
 {
-    float escalaX, escalaY, escala;
     int ancho, alto, base, tamMedio, flags, inicializado;
+    SDL_Surface *surSprites;
+    SDL_RWops *streamSprites;
 
     if(!sdl || !config)
     {
@@ -12,18 +13,8 @@ int inicializarSDL(ContextoSDL *sdl, const Configuracion *config)
         return ERROR_SDL;
     }
 
-    ancho = config->columnas * TAM_CELDA;
-    alto = config->filas * TAM_CELDA + MARGEN;
-
-    if (ancho < MIN_ANCHO || alto < MIN_ALTO)
-    {
-        escalaX = (float) MIN_ANCHO / (float) ancho;
-        escalaY = (float) MIN_ALTO / (float) alto;
-        escala = MAX(escalaX, escalaY);
-
-        ancho = (int) (ancho * escala);
-        alto = (int) (alto * escala);
-    }
+    ancho = INI_ANCHO;
+    alto = INI_ALTO;
 
     if (SDL_Init(SDL_INIT_VIDEO) < 0)
     {
@@ -60,12 +51,41 @@ int inicializarSDL(ContextoSDL *sdl, const Configuracion *config)
         return ERROR_SDL;
     }
 
+    streamSprites = SDL_RWFromFile("assets/images/SpriteAtlas.bmp", "rb");
+    if (!streamSprites)
+    {
+        printf("\nERROR al abrir archivo de sprites: %s", SDL_GetError());
+
+        SDL_DestroyRenderer(sdl->renderer);
+        SDL_DestroyWindow(sdl->ventana);
+        TTF_Quit();
+        SDL_Quit();
+        return ERROR_SDL;
+    }
+
+    surSprites = SDL_LoadBMP_RW(streamSprites, 1);
+    if (!surSprites)
+    {
+        printf("\nERROR al leer archivo de sprites: %s", SDL_GetError());
+
+        SDL_RWclose(streamSprites);
+        SDL_DestroyRenderer(sdl->renderer);
+        SDL_DestroyWindow(sdl->ventana);
+        TTF_Quit();
+        SDL_Quit();
+        return ERROR_SDL;
+    }
+
+    sdl->sprites = SDL_CreateTextureFromSurface(sdl->renderer, surSprites);
+    SDL_FreeSurface(surSprites);
+
     flags = MIX_INIT_MP3 | MIX_INIT_OGG;
     inicializado = Mix_Init(flags);
 
     if((inicializado & flags) != flags)
     {
         printf("\nERROR al inicializar SDL_mixer: %s",Mix_GetError());
+        SDL_DestroyTexture(sdl->sprites);
         SDL_DestroyRenderer(sdl->renderer);
         SDL_DestroyWindow(sdl->ventana);
         TTF_Quit();
@@ -77,15 +97,13 @@ int inicializarSDL(ContextoSDL *sdl, const Configuracion *config)
     {
         printf("\nERROR al inicializar el audio: %s",Mix_GetError());
         Mix_Quit();
+        SDL_DestroyTexture(sdl->sprites);
         SDL_DestroyRenderer(sdl->renderer);
         SDL_DestroyWindow(sdl->ventana);
         TTF_Quit();
         SDL_Quit();
         return ERROR_SDL;
     }
-
-    if(ancho > 0 && alto > 0)
-        SDL_RenderSetLogicalSize(sdl->renderer, ancho, alto);
 
     SDL_RenderSetIntegerScale(sdl->renderer, SDL_FALSE);
     SDL_SetWindowMinimumSize(sdl->ventana, MIN_ANCHO, MIN_ALTO);
@@ -113,9 +131,11 @@ int inicializarSDL(ContextoSDL *sdl, const Configuracion *config)
     if(!sdl->fuente)
     {
         printf("\nERROR al cargar una fuente: %s", TTF_GetError());
-
+        Mix_CloseAudio();
+        SDL_DestroyTexture(sdl->sprites);
         SDL_DestroyRenderer(sdl->renderer);
         SDL_DestroyWindow(sdl->ventana);
+        Mix_Quit();
         TTF_Quit();
         SDL_Quit();
         return ERROR_SDL;
@@ -129,8 +149,11 @@ int inicializarSDL(ContextoSDL *sdl, const Configuracion *config)
         TTF_CloseFont(sdl->fuente);
         sdl->fuente = NULL;
 
+        Mix_CloseAudio();
+        SDL_DestroyTexture(sdl->sprites);
         SDL_DestroyRenderer(sdl->renderer);
         SDL_DestroyWindow(sdl->ventana);
+        Mix_Quit();
         TTF_Quit();
         SDL_Quit();
         return ERROR_SDL;
@@ -257,6 +280,12 @@ void destruirSDL(ContextoSDL *sdl)
 
     TTF_CloseFont(sdl->fuenteHud);
     sdl->fuenteHud = NULL;
+
+    if(sdl->sprites)
+    {
+        SDL_DestroyTexture(sdl->sprites);
+        sdl->sprites = NULL;
+    }
 
     if(sdl->renderer)
     {

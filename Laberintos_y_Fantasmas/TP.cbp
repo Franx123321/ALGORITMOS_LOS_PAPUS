@@ -60,6 +60,10 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="Funciones_Tablero.h" />
+		<Unit filename="Funciones_ranking.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Funciones_ranking.h" />
 		<Unit filename="Macros.h" />
 		<Unit filename="Macros_Estructuras.h" />
 		<Unit filename="arbol.c">

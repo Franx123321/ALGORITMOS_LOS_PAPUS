@@ -1,33 +1,12 @@
 /* Este codigo tiene muchos mas comentarios que el juego porque aca hay muchos conceptos nuevos
-que esta bueno explicar para que se entiendan .
-Nota para el profe: Pido disculpas si algun comentario queda fuera de lugar,
+que esta bueno explicar para que se entiendan.
+Nota para el profe: Pido disculpas si algun comentario queda ligeramente fuera de lugar,
 son evidencias de mi lento descenso a la locura que me olvide de borrar */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <winsock2.h>
-#include <ws2tcpip.h>
-#include <windows.h>
 #include "arbol.h"
-#include "Funciones_Archivos.h"
 #include "cola.h"
-#ifdef _MSC_VER
-    #pragma comment(lib, "ws2_32.lib")
-#endif
+#include "Funciones_Archivos.h"
 
-#define PUERTO 7777
-#define EN_ESPERA 5 //Cantidad de clientes en espera
-#define MAX_CLIENTES 5 //Maximo de clientes simultaneos
-#define TAM_BUFFER 256
-#define MAX_NOMBRE 50
-
-typedef struct{
-    SOCKET sock;
-    int *clientesConectados;
-    HANDLE mutexClientes; //El que no entiende lo que es un mutex que curse Sistemas Operativos
-    tCola cola;
-}DatosCliente;
 
 DWORD WINAPI atenderCliente(LPVOID arg);
 /*
@@ -38,65 +17,34 @@ DWORD WINAPI atenderCliente(LPVOID arg);
        exactamente en nombre
 */
 
-HANDLE hArchivoMutex = NULL;
+SOCKET socketServidor = INVALID_SOCKET;
+HANDLE hArchivoMutex = NULL; 
+volatile sig_atomic_t servidorActivo = 1;
 
-int procesarYGuardarDatos(const char* buffer) {
-    char nombre[MAX_NOMBRE];
-    int puntuacion, movimientos;
-    Partida partida;
-    Jugador jugador;
-    int resultado = 0;
-
-    if(sscanf(buffer, "%[^|]|%d|%d", nombre, &puntuacion,&movimientos) != 3) {
-        printf("Error: formato de mensaje invalido\n");
-        return 0;
+void manejarCtrlC(int signo) 
+{
+    if (signo == SIGINT) {
+        printf("\n\nCerrando servidor por Ctrl+C...\n");
+        servidorActivo = 0;
+        // Cerrar socket de escucha para desbloquear accept()
+        closesocket(socketServidor);
     }
-    if(nombre[0] == '\0') {
-        printf("Error: nombre nulo\n");
-        return 0;
-    }
-    if(puntuacion < 0 || movimientos < 0) {
-        printf("Error: puntuacion o movimientos invalidos\n");
-        return 0;
-    }
-
-    // Preparar estructura Partida
-    strncpy(partida.nombre, nombre, MAX_NOMBRE - 1);
-    partida.nombre[MAX_NOMBRE - 1] = '\0';
-    partida.cantidad_movimientos = movimientos;
-
-    //Preparar estrucura Jugador
-    strncpy(jugador.nombre, nombre, MAX_NOMBRE - 1);
-    jugador.nombre[MAX_NOMBRE - 1] = '\0';
-    jugador.puntaje = puntuacion;
-    // Proteger acceso al archivo
-    WaitForSingleObject(hArchivoMutex, INFINITE);
-
-    resultado = almacenarJugador(&jugador); //escribo en el archivo de jugadores
-    if(!resultado){
-        return 0;
-    }
-    resultado = almacenarPartida(&jugador, movimientos); //escribo en el archivo de partidas
-    if(!resultado){
-        return 0;
-    }
-
-    ReleaseMutex(hArchivoMutex);
-    return 1;
 }
-
+//Se que las variables globales rozan la herejia, pero a la hora de trabajar con sockets es lo menos costosos
 
 int main()
 {
     WSADATA wsaData;  //Muy resumidamente, WSADATA es una struct de Windows que sirve para inicializar el sistema de sockets, es exclusivo de Windows
-    SOCKET socketServidor = INVALID_SOCKET,
-           socketCliente = INVALID_SOCKET; //Creo que el tipo de dato explica bastante bien que es esto
+    SOCKET socketCliente = INVALID_SOCKET; //Creo que el tipo de dato explica bastante bien que es esto
     HANDLE mutexClientes = NULL,
-           threadCliente = NULL;
+           threadCliente = NULL,
+           mutexArbol = NULL;
     struct sockaddr_in dirServidor, dirCliente; //Direcciones de sockets
     int tamDirCliente, clientesConectados = 0;
     const char *lleno = "SERVIDOR LLENO";
     DatosCliente *datos = NULL;
+    tArbolBinBusq arbolIndice;
+    FILE *uf;
 
     tamDirCliente = sizeof(dirCliente);
 
@@ -152,9 +100,8 @@ int main()
         exit(1);
     }
 
-        // Crear mutex para proteger accesos al archivo partidas.dat
+    // Crear mutex para proteger accesos al archivo partidas.dat
     hArchivoMutex = CreateMutex(NULL, FALSE, NULL);
-
     if(hArchivoMutex == NULL)
     {
         printf("\nERROR al crear el mutex de archivo.");
@@ -164,13 +111,52 @@ int main()
         exit(1);
     }
 
+    mutexArbol = CreateMutex(NULL, FALSE, NULL);
+    if(mutexArbol == NULL)
+    {
+        printf("\nERROR al crear el mutex.");
+        closesocket(socketServidor);
+        CloseHandle(mutexClientes);
+        CloseHandle(hArchivoMutex);
+        WSACleanup();
+        exit(1);
+    }
 
+    crearArbol(&arbolIndice);
+
+    if(cargarIndiceDesdeIdx(&arbolIndice, "jugadores.idx") == 0)
+    {
+        uf = fopen("jugadores.dat", "r+b");
+        if(!uf)
+            uf = fopen("jugadores.dat", "w+b");
+        if(!uf)
+        {
+            printf("\nNo se pudo crear o abrir el archivo de jugadores.");
+            closesocket(socketServidor);
+            CloseHandle(mutexClientes);
+            CloseHandle(hArchivoMutex);
+            CloseHandle(mutexArbol);
+            WSACleanup();
+            exit(1);
+        }
+
+        cargarIndiceDesdeArchivo(&arbolIndice, uf);
+        fclose(uf);
+
+        if(guardarIndiceEnArchivo("jugadores.dat", "jugadores.idx") != 1)
+            printf("\nAdvertencia: No se pudo crear el indice de jugadores.");
+    }
+
+    signal(SIGINT, manejarCtrlC);
     //La magia, se pone en espera de clientes
-    while(1)
+    while(servidorActivo)
     {
         printf("\nEsperando nueva conexion...\n");
 
         socketCliente = accept(socketServidor, (struct sockaddr*)&dirCliente, &tamDirCliente);
+        if(!servidorActivo)
+            break;
+
         if(socketCliente == INVALID_SOCKET)
         {
             printf("\nERROR al aceptar una conexion. Codigo: %d\n", WSAGetLastError());
@@ -201,6 +187,8 @@ int main()
         datos->sock = socketCliente;
         datos->clientesConectados = &clientesConectados;
         datos->mutexClientes = mutexClientes;
+        datos->mutexArbol = mutexArbol;
+        datos->arbolIndice = &arbolIndice;
 
         //Aca se crea el thread para el cliente que acaba de llegar y con la funcion atenderCliente automaticamente se atiende
         threadCliente = CreateThread(NULL, 0, atenderCliente, datos, 0, NULL);
@@ -216,6 +204,11 @@ int main()
             CloseHandle(threadCliente); //Ya se atendio, se cierra
     }
 
+    if(guardarIndiceEnArchivo("jugadores.dat", "jugadores.idx") != 1)
+        printf("\nAdvertencia: No se pudo guardar el indice de jugadores al finalizar la partida.");
+
+    destruirArbol(&arbolIndice);
+    CloseHandle(mutexArbol);
     CloseHandle(mutexClientes);
     closesocket(socketServidor);
     CloseHandle(hArchivoMutex);
@@ -235,6 +228,9 @@ DWORD WINAPI atenderCliente(LPVOID arg)
          *bienvenida = "Bienvenido al servidor de Laberintos y Fantasmas!\n";
     int bytes;
     char mensaje[TAM_BUFFER];
+    Usuario user;
+
+    FILE *archjugadores;
 
     crearCola(&datos->cola);
 
@@ -259,23 +255,50 @@ DWORD WINAPI atenderCliente(LPVOID arg)
                 printf("\nSe recibio fin, cerrando conexion con el cliente...\n");
                 break;
             }
-            //Aca irian las demas opciones para mas adelante, tal vez un "ver ranking"
 
-            // Encolar el mensaje
-            if(encolar(&datos->cola, buffer, strlen(buffer) + 1)) {
+            if(strcmp(buffer, "RANKING") == 0)
+            {
+                WaitForSingleObject(hArchivoMutex, INFINITE);
+
+                archjugadores = fopen("jugadores.dat", "rb");
+                if(!archjugadores) 
+                {
+                    printf("Error al abrir archivo de jugadores para ranking\n");
+                    ReleaseMutex(hArchivoMutex);
+                    continue;
+                }
+
+                while(fread(&user, sizeof(Usuario), 1, archjugadores) == 1) 
+                {
+                    sprintf(mensaje, "%d|%s|%d|%d;", user.id_jugador , user.nombre, user.p_total, user.partidas_jugadas);
+                    send(cliente, mensaje, strlen(mensaje), 0);
+                }
+
+                // Indicar fin del ranking
+                send(cliente, "FIN_RANKING\n", 12, 0);
+
+                fclose(archjugadores);
+
+                ReleaseMutex(hArchivoMutex);
+                continue;
+            }
+            
+            if(encolar(&datos->cola, buffer, strlen(buffer) + 1)) 
+            {
                 // Procesar todos los mensajes en la cola
-                while(!colaVacia(&datos->cola)) {
-                    if(desencolar(&datos->cola, mensaje, TAM_BUFFER)) {
-                        if(procesarYGuardarDatos(mensaje)) {
+                while(!colaVacia(&datos->cola)) 
+                {
+                    if(desencolar(&datos->cola, mensaje, TAM_BUFFER)) 
+                    {
+                        if(procesarYGuardarDatos(mensaje, datos->arbolIndice, datos->mutexArbol))
                             printf("Mensaje procesado exitosamente\n");
-                        } else {
+                        else
                             printf("Error al procesar mensaje\n");
-                        }
                     }
                 }
-            } else {
+            } 
+            else
                 printf("Error al encolar mensaje\n");
-            }
         }
 
 
@@ -300,4 +323,63 @@ DWORD WINAPI atenderCliente(LPVOID arg)
 
     free(datos);
     return 0;
+}
+
+
+int procesarYGuardarDatos(const char* buffer, tArbolBinBusq *arbol, HANDLE mutexArbol) 
+{
+    char nombre[MAX_NOMBRE];
+    int puntuacion, movimientos;
+    Partida partida;
+    Usuario jugador;
+    int resultado = 0;
+
+    if(sscanf(buffer, "%[^|]|%d|%d;", nombre, &puntuacion, &movimientos) != 3) 
+    {
+        printf("Error: formato de mensaje invalido\n");
+        return 0;
+    }
+    if(nombre[0] == '\0') 
+    {
+        printf("Error: nombre nulo\n");
+        return 0;
+    }
+    if(puntuacion < 0 || movimientos < 0) 
+    {
+        printf("Error: puntuacion o movimientos invalidos\n");
+        return 0;
+    }
+
+    // Preparar estructura Partida
+    strncpy(partida.nombre, nombre, MAX_NOMBRE - 1);
+    partida.nombre[MAX_NOMBRE - 1] = '\0';
+    partida.cantidad_movimientos = movimientos;
+
+    //Preparar estrucura Jugador
+    strncpy(jugador.nombre, nombre, MAX_NOMBRE - 1);
+    jugador.nombre[MAX_NOMBRE - 1] = '\0';
+    jugador.p_total = puntuacion;
+
+    // Proteger acceso al archivo
+    WaitForSingleObject(hArchivoMutex, INFINITE);
+    WaitForSingleObject(mutexArbol, INFINITE);
+
+    resultado = almacenarJugador(&jugador, arbol, mutexArbol); //escribo en el archivo de jugadores
+    if(!resultado)
+    {
+        ReleaseMutex(hArchivoMutex);
+        ReleaseMutex(mutexArbol);
+        return 0;
+    }
+    resultado = almacenarPartida(&jugador, movimientos); //escribo en el archivo de partidas
+    if(!resultado)
+    {
+        ReleaseMutex(hArchivoMutex);
+        ReleaseMutex(mutexArbol);
+        return 0;
+    }
+
+    ReleaseMutex(hArchivoMutex);
+    ReleaseMutex(mutexArbol);
+    return 1;
 }

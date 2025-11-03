@@ -53,6 +53,26 @@ tNodoArbol **buscarEnArbol(tArbolBinBusq *p, const void *dato, int (*comp) (cons
         return buscarEnArbol(&(*p)->izq, dato, comp);
 }
 
+
+tNodoArbol **buscarEnArbolNoClave(tArbolBinBusq *a, const void *dato, int (*cmp)(const void*, const void*))
+{
+    if(!a || !*a)
+        return NULL;
+
+    int comp = cmp((*a)->dato, dato);
+
+    if(comp == 0)
+        return a;
+
+    tNodoArbol **izq = buscarEnArbolNoClave(&(*a)->izq, dato, cmp);
+    
+    if(izq)
+        return izq;
+
+    return buscarEnArbolNoClave(&(*a)->der, dato, cmp);
+}
+
+
 int alturaArbolBin(tArbolBinBusq *p){
     int ai = 0, ad = 0;
 
@@ -82,10 +102,11 @@ int eliminarRaizArbolBinBusq(tArbolBinBusq *p){
         return 0;
 
     free((*p)->dato);
-    if((*p)->der == (*p)->izq == NULL){
+    if(!(*p)->izq && !(*p)->der)
+    {
         free(*p);
-        *p = NULL;
-        return 1;
+        *p=NULL;
+        return 1; // Eliminacion exitosa
     }
 
     remp = alturaArbolBin(&(*p)->izq) > alturaArbolBin(&(*p)->der) ? mayorNodoArbolBinBusq(&(*p)->izq) : mayorNodoArbolBinBusq(&(*p)->der);
@@ -104,10 +125,18 @@ int eliminarRaizArbolBinBusq(tArbolBinBusq *p){
 void destruirArbol(tArbolBinBusq *p){
     if(!*p)
         return;
-    
+
     destruirArbol(&(*p)->izq);
     destruirArbol(&(*p)->der);
     free((*p)->dato);
     free(*p);
     *p = NULL;
+}
+
+int contarNodosArbol(const tArbolBinBusq *a)
+{
+    if(!*a)
+        return 0;
+
+    return contarNodosArbol(&(*a)->izq) + contarNodosArbol(&(*a)->der) + 1;
 }

@@ -5,6 +5,7 @@
 #include "Funciones_Tablero.h"
 #include "Funciones_Generacion.h"
 #include "Funciones_Partida.h"
+#include "Funciones_ranking.h"
 
 #define ERROR_ENVIO 0
 
@@ -20,11 +21,13 @@ int main()
     Fantasma *fantasmas;
     ContextoSDL sdl;
     tCola ColaMovimientos;
+    tLista Ranking;
     WSADATA wsaData;
     SOCKET sock; //No le puedo llamar socket porque asi se llama la funcion
+    int timeout = 1000; // 1 seg
     struct sockaddr_in dirServidor;
     char buffer[256];
-    int opMenu, bytesLeidos, EstadoJuego;
+    int opMenu, bytesLeidos, EstadoJuego=0;
     int cantmovimientos = 0;
 
     system("chcp 65001 > nul");
@@ -65,10 +68,12 @@ int main()
         WSACleanup();
         exit(1);
     }
+    setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (char*)&timeout, sizeof(timeout));
 
     dirServidor.sin_family = AF_INET;
     dirServidor.sin_port = htons(PUERTO);
-    inet_pton(AF_INET, "127.0.0.1", &dirServidor.sin_addr);
+    dirServidor.sin_addr.s_addr = inet_addr("127.0.0.1");
+
 
     //Intento conectarme
     if(connect(sock, (struct sockaddr*)&dirServidor, sizeof(dirServidor)) == SOCKET_ERROR)
@@ -76,44 +81,21 @@ int main()
             printf("\nERROR al conectar al servidor,se jugara en modo contingencia.\n");
             closesocket(sock);
             WSACleanup();
-            free(fantasmas);
-            exit(1);
-    }
-
-    printf("\nConectado con exito al servidor...\n");
-
-    bytesLeidos = recv(sock, buffer, sizeof(buffer) - 1, 0);
-    if(bytesLeidos > 0)
-    {
-        buffer[bytesLeidos] = '\0';
-        printf("\nServidor: %s\n", buffer);
+            sock=INVALID_SOCKET;
     }
     else
-        printf("\nNo se recibio ningun mensaje del servidor.\n");
-
-
-    //JUGADOR//
-    jugador.vidas = config.vidasIniciales;
-    jugador.posY = 1;
-    jugador.posX = 0;
-    jugador.puntaje = 0;
-
-    //TABLERO//
-    //Aca se carga el contenido del laberinto: paredes, caminos, salida, fantasmas, premios y vidas extra
-    laberinto.celdas = NULL;
-    laberinto.filas = config.filas;
-    laberinto.columnas = config.columnas;
-    if(cargarLaberinto(&laberinto, fantasmas, &jugador, config) != TODO_BIEN)
     {
-        printf("\nError al cargar el laberinto.");
-        closesocket(sock);
-        WSACleanup();
-        free(fantasmas);
-        exit(1);
-    }
+        printf("\nConectado con exito al servidor...\n");
 
-    //Aca se guarda la disposicion inicial del laberinto en un archivo de texto
-    guardarLaberinto(&laberinto);
+        bytesLeidos = recv(sock, buffer, sizeof(buffer) - 1, 0);
+        if(bytesLeidos > 0)
+        {
+            buffer[bytesLeidos] = '\0';
+            printf("\nServidor: %s\n", buffer);
+        }
+        else
+            printf("\nNo se recibio ningun mensaje del servidor.\n");
+    }
 
     //SDL//
     if(inicializarSDL(&sdl, &config) != TODO_BIEN)
@@ -126,24 +108,62 @@ int main()
     }
 
     //LOGICA DE JUEGO//
+    opMenu = menu(&sdl);
     crearCola(&ColaMovimientos);
-    opMenu = menu(sdl.renderer, sdl.fuente, sdl.ancho, sdl.alto);
-    if(opMenu == 3)
-        printf("\nSe selecciono salir");
-    else if(opMenu == 2) //TEMPORAL
-        destruir_matriz((void **)laberinto.celdas, laberinto.filas);
-    else if(opMenu == 1)
-        if (pantallaIngresarNombre(&sdl, sdl.fuente, &jugador) != SALIR)
-        {
-            EstadoJuego = Jugar(&laberinto, &jugador, fantasmas, config.maxFantasmas, &sdl, &ColaMovimientos, &cantmovimientos);
-            if(EstadoJuego != VICTORIA && EstadoJuego != DERROTA)
-                printf("\nSe produjo un error durante el juego.");
+    while(opMenu != 3 || EstadoJuego== 0)
+    {
+        if(opMenu == 3){
+            printf("\nSe selecciono salir");
+            break;
         }
+        else if(opMenu == 2) //TEMPORAL
+        {
+            crearLista(&Ranking);
+            verRanking(&Ranking,&sock);//Le pide el ranking al servidor y arma la lista
+            mostrarRankingSDL(&sdl, sdl.fuente, &Ranking); //Arma el sdl para mostrar la lista ordenada
+            vaciarLista(&Ranking);
+        }
+        else if(opMenu == 1)
+            if (pantallaIngresarNombre(&sdl, sdl.fuente, &jugador) != SALIR)
+            {
 
-    if(EstadoJuego == VICTORIA)
-        enviarDatosAlServidor(sock, jugador.nombre, jugador.puntaje, cantmovimientos);
+                //JUGADOR//
+                jugador.vidas = config.vidasIniciales;
+                jugador.posY = 1;
+                jugador.posX = 0;
+                jugador.puntaje = 0;
+                cantmovimientos = 0;
 
-    send(sock, "FIN", 3, 0);
+                //TABLERO//
+                //Aca se carga el contenido del laberinto: paredes, caminos, salida, fantasmas, premios y vidas extra
+                laberinto.celdas = NULL;
+                laberinto.filas = config.filas;
+                laberinto.columnas = config.columnas;
+                if(cargarLaberinto(&laberinto, fantasmas, &jugador, config) != TODO_BIEN)
+                {
+                    printf("\nError al cargar el laberinto.");
+                    closesocket(sock);
+                    WSACleanup();
+                    free(fantasmas);
+                    exit(1);
+                }
+
+                //Aca se guarda la disposicion inicial del laberinto en un archivo de texto
+                guardarLaberinto(&laberinto);
+
+                EstadoJuego = Jugar(&laberinto, &jugador, fantasmas, config.maxFantasmas, &sdl, &ColaMovimientos, &cantmovimientos);
+                if(EstadoJuego != VICTORIA && EstadoJuego != DERROTA)
+                    printf("\nSe produjo un error durante el juego.");
+
+                if(EstadoJuego == VICTORIA && sock!=INVALID_SOCKET)
+                    enviarDatosAlServidor(sock, jugador.nombre, jugador.puntaje, cantmovimientos);
+            }
+        opMenu = menu(&sdl);
+    }
+
+
+    if(sock!=INVALID_SOCKET)
+        send(sock, "FIN", 3, 0);
 
     //DESTRUCTORES Y LIBERACIONES//
     closesocket(sock);
@@ -240,13 +260,8 @@ int leerConfig(Configuracion *config)
         printf("\nTamaño del laberinto superior al máximo posible, revise la configuración.");
         return ERROR_CONFIG;
     }
-    if(config->columnas <= (config->filas-3))
-    {
-        printf("\nPor razones de renderizado, no puede haber mas de 3 columnas menos que la cantidad de filas, por favor cambie la configuracion.");
-        return ERROR_CONFIG;
-    }
     if(config->maxFantasmas < 1 || config->maxPremios < 1) {
-        printf("\nDebe haber al menos un fantasma o premio, revise la configuración.");
+        printf("\nDebe haber al menos un fantasma o premio, revise la configuración, no sea cobarde.");
         return ERROR_CONFIG;
     }
     if(config->maxFantasmas > (config->filas * config->columnas) / 4) {
