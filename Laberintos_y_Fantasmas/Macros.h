@@ -41,7 +41,7 @@
 
 #define MIN_FILAS 15
 #define MIN_COLUMNAS 15
-#define MAX_FILAS 25    //Es lo maximo que se ve bien en pantalla, igualmente depende del tamaño de la ventana y de las celdas
+#define MAX_FILAS 30    //Es lo maximo que se ve bien en pantalla, igualmente depende del tamaño de la ventana y de las celdas
 #define MAX_COLUMNAS 50 //Podria ser bastante mas, pero seria una fea relacion filas/columnas
 #define MIN_PUNTOS 10
 #define MAX_PUNTOS 50
@@ -53,11 +53,11 @@
 #define DERROTA -1
 #define SALIR 0
 
-#define MIN_ANCHO 480
-#define MIN_ALTO 480
+#define MIN_ANCHO 300
+#define MIN_ALTO 300
 #define INI_ANCHO 960
 #define INI_ALTO 580
-#define TAM_CELDA 24 //Tamaño en pixeles
+#define TAM_CELDA 29 //Tamaño en pixeles
 #define MARGEN 48    //Margen superior para el HUD
 
 #define ERROR_ARCH 0

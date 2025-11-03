@@ -462,15 +462,12 @@ int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFant
 {
 
     char movimiento = 0, aseguradorMovimiento;
-    int estado = 1, jugando = 1, tamCeldaReal, winW, winH,
-        vpW, vpH, totalWidth, offsetX, tamFuenteHudDeseado;
-    float escalaX = 1, escalaY = 1, escala = 1, escalaTexto = 1.0f;
+    int estado = 1, jugando = 1, Woriginal, Horiginal, tamFuenteHudActual = 0, tamFuenteHudDeseado;
+    float escalaTexto = 1.0f;
     TTF_Font *fuenteLocal = NULL;
     TTF_Font *fuenteHudOriginal = NULL;
-    int tamFuenteHudActual = 0;
     TTF_Font *fuenteHudLocal = NULL;
     SDL_Event evento;
-    SDL_Rect vp;
     Mix_Music *musica = NULL;
 
     if (!laberinto || !jugador || !fantasmas || !sdl || !ColaMovimientos)
@@ -482,7 +479,7 @@ int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFant
     else if(Mix_PlayMusic(musica, -1) == -1)
         printf("\nERROR al reproducir la musica: %s", Mix_GetError());
 
-    SDL_GetWindowSize(sdl->ventana, &winW, &winH);
+    SDL_GetWindowSize(sdl->ventana, &Woriginal, &Horiginal);
 
     // Inicializar punteros locales a las fuentes iniciales (simplificar)
     if (sdl->fuente)
@@ -495,7 +492,7 @@ int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFant
     else
         fuenteHudOriginal = NULL;
 
-
+  
     while(jugando && estado != VICTORIA)
     {
         while(SDL_PollEvent(&evento))
@@ -506,21 +503,6 @@ int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFant
             {
                 sdl->ancho = evento.window.data1;
                 sdl->alto = evento.window.data2;
-                /*escalaX = (float) winW / sdl->ancho;
-                escalaY = (float) winH / sdl->alto;
-                escala = MIN(escalaX, escalaY);
-                if (escala <= 0.0f)
-                    escala = 1.0f;
-
-                vpW = (int)(sdl->ancho * escala);
-                vpH = (int)(sdl->alto * escala);
-
-                vp.x = (winW - vpW) / 2;
-                vp.y = (winH - vpH) / 2;
-                vp.w = vpW;
-                vp.h = vpH;
-
-                SDL_RenderSetViewport(sdl->renderer, &vp);*/
             }
             else if(evento.type == SDL_KEYDOWN)
             {
@@ -584,19 +566,6 @@ int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFant
         SDL_SetRenderDrawColor(sdl->renderer, 0, 0, 0, 255);
         SDL_RenderClear(sdl->renderer);
 
-        /*
-        tamCeldaReal = (sdl->ancho / laberinto->columnas);
-        if (tamCeldaReal <= 0)
-            tamCeldaReal = 1;
-        */
-
-        tamCeldaReal = TAM_CELDA;
-
-        totalWidth = tamCeldaReal * laberinto->columnas;
-        offsetX = (sdl->ancho - totalWidth) / 2;
-        if (offsetX < 0)
-            offsetX = 0;
-
         // Valores mayores a 24 crashean todo al renderizar
         // ciertas letras
         tamFuenteHudDeseado = 24;
@@ -618,8 +587,10 @@ int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFant
 
         //Usar la fuente HUD local si existe, sino la pasada por parametro
         TTF_Font *fuenteParaHUD = (fuenteHudLocal ? fuenteHudLocal : fuenteHudOriginal);
-
-        dibujarTablero(sdl, laberinto, jugador, fuenteParaHUD, tamCeldaReal, offsetX, escalaTexto);
+        
+        SDL_SetWindowSize(sdl->ventana, laberinto->columnas * TAM_CELDA, MARGEN + laberinto->filas * TAM_CELDA);
+        
+        dibujarTablero(sdl, laberinto, jugador, fuenteParaHUD, TAM_CELDA, 0, escalaTexto);
 
         SDL_RenderPresent(sdl->renderer);
 
@@ -629,6 +600,8 @@ int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFant
     Mix_HaltMusic();
     Mix_FreeMusic(musica);
     musica = NULL;
+
+    SDL_SetWindowSize(sdl->ventana, Woriginal, Horiginal);
 
     if(estado == VICTORIA)
         victoria(sdl, fuenteLocal, jugador->puntaje);

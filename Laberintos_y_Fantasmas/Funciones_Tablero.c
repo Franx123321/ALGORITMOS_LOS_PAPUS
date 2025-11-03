@@ -320,29 +320,6 @@ void dibujarTablero(ContextoSDL *sdl, Tablero *laberinto, Jugador *j, TTF_Font *
                 recta.y = 24;
                 SDL_RenderCopy(sdl->renderer, sdl->sprites, &recta, &rectaDest);
             }
-
-            //Colores para cada cosa, se pueden cambiar cambiando los parametros 2, 3 y 4
-            /*
-            switch (celda)
-            {
-                case '#': SDL_SetRenderDrawColor(sdl->renderer, 0, 0, 0, 255);
-                          break;
-                case 'J': SDL_SetRenderDrawColor(sdl->renderer, 0, 0, 255, 255);
-                          break;
-                case 'S': SDL_SetRenderDrawColor(sdl->renderer, 0, 255, 0, 255);
-                          break;
-                case 'F': SDL_SetRenderDrawColor(sdl->renderer, 255, 0, 0, 255);
-                          break;
-                case 'V': SDL_SetRenderDrawColor(sdl->renderer, 128, 0, 128, 255);
-                          break;
-                case 'P': SDL_SetRenderDrawColor(sdl->renderer, 255, 215, 0, 255);
-                          break;
-                default:  SDL_SetRenderDrawColor(sdl->renderer, 255, 255, 255, 255);
-                          break;
-            }
-
-            SDL_RenderFillRect(sdl->renderer, &recta);
-            */
         }
     }
 
