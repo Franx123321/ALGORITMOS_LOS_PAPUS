@@ -4,6 +4,7 @@
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <windows.h>
+#include <signal.h>
 #ifdef _MSC_VER
     #pragma comment(lib, "ws2_32.lib")
 #endif
@@ -15,6 +16,16 @@
 #define MAX_CLIENTES 5 //Maximo de clientes simultaneos
 #define TAM_BUFFER 256
 #define MAX_NOMBRE 50
+
+
+typedef struct{
+    SOCKET sock;
+    int *clientesConectados;
+    HANDLE mutexClientes; //El que no entiende lo que es un mutex que curse Sistemas Operativos
+    HANDLE mutexArbol;  
+    tArbolBinBusq *arbolIndice;
+    tCola cola;
+}DatosCliente;
 
 typedef struct{
     char nombre[50];
@@ -32,14 +43,18 @@ typedef struct{
 }Usuario;
 
 typedef struct{
-    char nombre[50];
+    int Id; //Balanceo
+    char nombre[50]; //Busqueda
     long offset;
 }Induser;
 
 int almacenarPartida(Usuario *j, int cantmovimientos);
 int almacenarJugador(Usuario *j, tArbolBinBusq *arbol, HANDLE mutexArbol);
 void cargarIndiceDesdeArchivo(tArbolBinBusq *p, FILE *pf);
+int cargarIndiceDesdeIdx(tArbolBinBusq *p, const char *ruta);
+int guardarIndiceEnArchivo(const char *rutaBin, const char *rutaIdx);
 int comparacionArbol(const void *a, const void *b);
 int comparacionIndexes(const void *a, const void *b);
 int cargarDatosEnArch(FILE *pf, Usuario *j, const void *dato);
 int procesarYGuardarDatos(const char* buffer, tArbolBinBusq *arbol, HANDLE mutexArbol);
+void manejarCtrlC(int signo);

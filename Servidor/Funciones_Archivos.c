@@ -7,10 +7,8 @@
 #define TODO_BIEN 1
 
 //Usuarios
-int almacenarJugador(Usuario *j, tArbolBinBusq *arbol, HANDLE mutexArbol) 
+int almacenarJugador(Usuario *j, tArbolBinBusq *arbol, HANDLE mutexArbol)
 {
-    WaitForSingleObject(mutexArbol, INFINITE);
-
     long offset;
     Induser nuevo;
     FILE *uf = fopen("jugadores.dat", "r+b");
@@ -22,17 +20,18 @@ int almacenarJugador(Usuario *j, tArbolBinBusq *arbol, HANDLE mutexArbol)
         return ERROR_APERTURA;
     }
 
-    tNodoArbol **iuser = buscarEnArbol(arbol, j->nombre, comparacionArbol);
+    tNodoArbol **iuser = buscarEnArbolNoClave(arbol, j->nombre, comparacionArbol);
 
-    if (!iuser) 
+    if (!iuser)
     {
         //Nuevo jugador si no existia ya
         fseek(uf, 0, SEEK_END); //me muevo al ultimo registro y obtengo sus datos
         offset = ftell(uf);
+
         j->id_jugador = contarNodosArbol(arbol) + 1;
         fwrite(j, sizeof(Usuario), 1, uf);
 
-        
+        nuevo.Id = j->id_jugador;
         strcpy(nuevo.nombre, j->nombre);
         nuevo.offset = offset;
         insertarEnArbolOrdenado(arbol, &nuevo, sizeof(Induser), comparacionIndexes);
@@ -40,11 +39,13 @@ int almacenarJugador(Usuario *j, tArbolBinBusq *arbol, HANDLE mutexArbol)
         cargarDatosEnArch(uf, j, (*iuser)->dato); // Si ya existia voy a cargardatosenarch
 
     fclose(uf);
+
     return TODO_BIEN;
 }
 
 
-int cargarDatosEnArch(FILE *pf, Usuario *j, const void *dato) {
+int cargarDatosEnArch(FILE *pf, Usuario *j, const void *dato)
+{
     Induser *cdato = (Induser *)dato;
     Usuario user;
 
@@ -62,7 +63,26 @@ int cargarDatosEnArch(FILE *pf, Usuario *j, const void *dato) {
 }
 
 
-void cargarIndiceDesdeArchivo(tArbolBinBusq *p, FILE *pf){
+int cargarIndiceDesdeIdx(tArbolBinBusq *p, const char *ruta)
+{
+    FILE *pf;
+    Induser idx;
+
+    pf = fopen(ruta, "rb");
+    if(!pf)
+        return 0;
+
+    while(fread(&idx, sizeof(Induser), 1, pf))
+        insertarEnArbolOrdenado(p, &idx, sizeof(Induser), comparacionIndexes);
+
+    fclose(pf);
+
+    return 1;
+}
+
+
+void cargarIndiceDesdeArchivo(tArbolBinBusq *p, FILE *pf)
+{
     Usuario user;
     Induser idx;
     long offset;
@@ -74,11 +94,54 @@ void cargarIndiceDesdeArchivo(tArbolBinBusq *p, FILE *pf){
         offset = ftell(pf);
         if(fread(&user, sizeof(Usuario), 1, pf) != 1)
             break;
-        strcpy(idx.nombre, user.nombre);
+
+        idx.Id = user.id_jugador;
+        strncpy(idx.nombre, user.nombre, sizeof(idx.nombre) - 1);
+        idx.nombre[sizeof(idx.nombre) - 1] = '\0';
         idx.offset = offset;
+
         insertarEnArbolOrdenado(p, &idx, sizeof(Induser), comparacionIndexes);
     }
 }
+
+
+int guardarIndiceEnArchivo(const char *rutaBin, const char *rutaIdx)
+{
+    FILE *bin = fopen(rutaBin, "rb");
+    FILE *ind = fopen(rutaIdx, "wb");
+    if(!bin)
+        return 0;
+    if(!ind)
+    {
+        fclose(bin);
+        return 0;
+    }
+
+    Usuario user;
+    Induser idx;
+    long offset;
+
+    rewind(bin);
+
+    while(1)
+    {
+        offset = ftell(bin);
+        if(fread(&user, sizeof(Usuario), 1, bin) != 1)
+            break;
+
+        idx.Id = user.id_jugador;
+        strncpy(idx.nombre, user.nombre, sizeof(idx.nombre) - 1);
+        idx.nombre[sizeof(idx.nombre) - 1] = '\0';
+        idx.offset = offset;
+
+        fwrite(&idx, sizeof(Induser), 1, ind);
+    }
+
+    fclose(ind);
+    fclose(bin);
+    return 1;
+}
+
 
 int comparacionArbol(const void *a, const void *b){
     const char *nombreClave = (const char *)b;
@@ -91,7 +154,11 @@ int comparacionIndexes(const void *a, const void *b){
     const Induser *ca = (const Induser*)a;
     const Induser *cb = (const Induser*)b;
 
-    return strcmp(ca->nombre, cb->nombre);
+    if(ca->Id < cb->Id)
+        return -1;
+    else if(ca->Id > cb->Id)
+        return 1;
+    return 0;
 }
 
 
@@ -138,4 +205,3 @@ int almacenarPartida(Usuario *j, int cantmovimientos){
     fclose(pf);
     return TODO_BIEN;
 }
-

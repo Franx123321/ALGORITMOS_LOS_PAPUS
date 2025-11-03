@@ -53,6 +53,26 @@ tNodoArbol **buscarEnArbol(tArbolBinBusq *p, const void *dato, int (*comp) (cons
         return buscarEnArbol(&(*p)->izq, dato, comp);
 }
 
+
+tNodoArbol **buscarEnArbolNoClave(tArbolBinBusq *a, const void *dato, int (*cmp)(const void*, const void*))
+{
+    if(!a || !*a)
+        return NULL;
+
+    int comp = cmp((*a)->dato, dato);
+
+    if(comp == 0)
+        return a;
+
+    tNodoArbol **izq = buscarEnArbolNoClave(&(*a)->izq, dato, cmp);
+    
+    if(izq)
+        return izq;
+
+    return buscarEnArbolNoClave(&(*a)->der, dato, cmp);
+}
+
+
 int alturaArbolBin(tArbolBinBusq *p){
     int ai = 0, ad = 0;
 

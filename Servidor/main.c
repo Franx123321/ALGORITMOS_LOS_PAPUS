@@ -7,14 +7,6 @@ son evidencias de mi lento descenso a la locura que me olvide de borrar */
 #include "cola.h"
 #include "Funciones_Archivos.h"
 
-typedef struct{
-    SOCKET sock;
-    int *clientesConectados;
-    HANDLE mutexClientes; //El que no entiende lo que es un mutex que curse Sistemas Operativos
-    HANDLE mutexArbol;  
-    tArbolBinBusq *arbolIndice;
-    tCola cola;
-}DatosCliente;
 
 DWORD WINAPI atenderCliente(LPVOID arg);
 /*
@@ -25,17 +17,28 @@ DWORD WINAPI atenderCliente(LPVOID arg);
        exactamente en nombre
 */
 
+SOCKET socketServidor = INVALID_SOCKET;
 HANDLE hArchivoMutex = NULL; 
+volatile sig_atomic_t servidorActivo = 1;
 
+void manejarCtrlC(int signo) 
+{
+    if (signo == SIGINT) {
+        printf("\n\nCerrando servidor por Ctrl+C...\n");
+        servidorActivo = 0;
+        // Cerrar socket de escucha para desbloquear accept()
+        closesocket(socketServidor);
+    }
+}
+//Se que las variables globales rozan la herejia, pero a la hora de trabajar con sockets es lo menos costosos
 
 int main()
 {
     WSADATA wsaData;  //Muy resumidamente, WSADATA es una struct de Windows que sirve para inicializar el sistema de sockets, es exclusivo de Windows
-    SOCKET socketServidor = INVALID_SOCKET,
-           socketCliente = INVALID_SOCKET; //Creo que el tipo de dato explica bastante bien que es esto
+    SOCKET socketCliente = INVALID_SOCKET; //Creo que el tipo de dato explica bastante bien que es esto
     HANDLE mutexClientes = NULL,
            threadCliente = NULL,
-           mutexArbol;
+           mutexArbol = NULL;
     struct sockaddr_in dirServidor, dirCliente; //Direcciones de sockets
     int tamDirCliente, clientesConectados = 0;
     const char *lleno = "SERVIDOR LLENO";
@@ -99,7 +102,6 @@ int main()
 
     // Crear mutex para proteger accesos al archivo partidas.dat
     hArchivoMutex = CreateMutex(NULL, FALSE, NULL);
-
     if(hArchivoMutex == NULL)
     {
         printf("\nERROR al crear el mutex de archivo.");
@@ -121,26 +123,40 @@ int main()
     }
 
     crearArbol(&arbolIndice);
-    uf = fopen("jugadores.dat", "r+b");
-    if(!uf)
-        uf = fopen("jugadores.dat", "w+b");
-    if(!uf)
+
+    if(cargarIndiceDesdeIdx(&arbolIndice, "jugadores.idx") == 0)
     {
-        printf("\nNo se pudo crear el archivo de jugadores.");
-        closesocket(socketServidor);
-        WSACleanup();
-        exit(1);
+        uf = fopen("jugadores.dat", "r+b");
+        if(!uf)
+            uf = fopen("jugadores.dat", "w+b");
+        if(!uf)
+        {
+            printf("\nNo se pudo crear o abrir el archivo de jugadores.");
+            closesocket(socketServidor);
+            CloseHandle(mutexClientes);
+            CloseHandle(hArchivoMutex);
+            CloseHandle(mutexArbol);
+            WSACleanup();
+            exit(1);
+        }
+
+        cargarIndiceDesdeArchivo(&arbolIndice, uf);
+        fclose(uf);
+
+        if(guardarIndiceEnArchivo("jugadores.dat", "jugadores.idx") != 1)
+            printf("\nAdvertencia: No se pudo crear el indice de jugadores.");
     }
 
-    cargarIndiceDesdeArchivo(&arbolIndice, uf);
-    fclose(uf);
-
+    signal(SIGINT, manejarCtrlC);
     //La magia, se pone en espera de clientes
-    while(1)
+    while(servidorActivo)
     {
         printf("\nEsperando nueva conexion...\n");
 
         socketCliente = accept(socketServidor, (struct sockaddr*)&dirCliente, &tamDirCliente);
+        if(!servidorActivo)
+            break;
+
         if(socketCliente == INVALID_SOCKET)
         {
             printf("\nERROR al aceptar una conexion. Codigo: %d\n", WSAGetLastError());
@@ -188,6 +204,11 @@ int main()
             CloseHandle(threadCliente); //Ya se atendio, se cierra
     }
 
+    if(guardarIndiceEnArchivo("jugadores.dat", "jugadores.idx") != 1)
+        printf("\nAdvertencia: No se pudo guardar el indice de jugadores al finalizar la partida.");
+
+    destruirArbol(&arbolIndice);
+    CloseHandle(mutexArbol);
     CloseHandle(mutexClientes);
     closesocket(socketServidor);
     CloseHandle(hArchivoMutex);
@@ -341,14 +362,24 @@ int procesarYGuardarDatos(const char* buffer, tArbolBinBusq *arbol, HANDLE mutex
 
     // Proteger acceso al archivo
     WaitForSingleObject(hArchivoMutex, INFINITE);
+    WaitForSingleObject(mutexArbol, INFINITE);
 
     resultado = almacenarJugador(&jugador, arbol, mutexArbol); //escribo en el archivo de jugadores
     if(!resultado)
+    {
+        ReleaseMutex(hArchivoMutex);
+        ReleaseMutex(mutexArbol);
         return 0;
+    }
     resultado = almacenarPartida(&jugador, movimientos); //escribo en el archivo de partidas
     if(!resultado)
+    {
+        ReleaseMutex(hArchivoMutex);
+        ReleaseMutex(mutexArbol);
         return 0;
+    }
 
     ReleaseMutex(hArchivoMutex);
+    ReleaseMutex(mutexArbol);
     return 1;
 }
