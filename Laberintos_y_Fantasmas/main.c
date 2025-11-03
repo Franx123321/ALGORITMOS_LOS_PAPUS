@@ -21,12 +21,13 @@ int main()
     Fantasma *fantasmas;
     ContextoSDL sdl;
     tCola ColaMovimientos;
+    tLista Ranking;
     WSADATA wsaData;
     SOCKET sock; //No le puedo llamar socket porque asi se llama la funcion
-    int timeout = 1000; // 5 segundos
+    int timeout = 1000; // 1 seg
     struct sockaddr_in dirServidor;
     char buffer[256];
-    int opMenu, bytesLeidos, EstadoJuego;
+    int opMenu, bytesLeidos, EstadoJuego=0;
     int cantmovimientos = 0;
 
     system("chcp 65001 > nul");
@@ -79,21 +80,21 @@ int main()
             printf("\nERROR al conectar al servidor,se jugara en modo contingencia.\n");
             closesocket(sock);
             WSACleanup();
-            free(fantasmas);
-            exit(1);
-    }
-
-    printf("\nConectado con exito al servidor...\n");
-
-    bytesLeidos = recv(sock, buffer, sizeof(buffer) - 1, 0);
-    if(bytesLeidos > 0)
-    {
-        buffer[bytesLeidos] = '\0';
-        printf("\nServidor: %s\n", buffer);
+            sock=INVALID_SOCKET;
     }
     else
-        printf("\nNo se recibio ningun mensaje del servidor.\n");
+    {
+        printf("\nConectado con exito al servidor...\n");
 
+        bytesLeidos = recv(sock, buffer, sizeof(buffer) - 1, 0);
+        if(bytesLeidos > 0)
+        {
+            buffer[bytesLeidos] = '\0';
+            printf("\nServidor: %s\n", buffer);
+        }
+        else
+            printf("\nNo se recibio ningun mensaje del servidor.\n");
+    }
 
     //JUGADOR//
     jugador.vidas = config.vidasIniciales;
@@ -131,24 +132,37 @@ int main()
     //LOGICA DE JUEGO//
     crearCola(&ColaMovimientos);
     opMenu = menu(sdl.renderer, sdl.fuente, sdl.ancho, sdl.alto);
-    if(opMenu == 3)
-        printf("\nSe selecciono salir");
-    else if(opMenu == 2) //TEMPORAL
+    while(opMenu != 3 || EstadoJuego== 0)
     {
-        verRanking(&sock);
-    }
-    else if(opMenu == 1)
-        if (pantallaIngresarNombre(&sdl, sdl.fuente, &jugador) != SALIR)
-        {
-            EstadoJuego = Jugar(&laberinto, &jugador, fantasmas, config.maxFantasmas, &sdl, &ColaMovimientos, &cantmovimientos);
-            if(EstadoJuego != VICTORIA && EstadoJuego != DERROTA)
-                printf("\nSe produjo un error durante el juego.");
+        if(opMenu == 3){
+            printf("\nSe selecciono salir");
+            break;
         }
+        else if(opMenu == 2) //TEMPORAL
+        {
+            crearLista(&Ranking);
+            verRanking(&Ranking,&sock);
 
-    if(EstadoJuego == VICTORIA)
-        enviarDatosAlServidor(sock, jugador.nombre, jugador.puntaje, cantmovimientos);
 
-    send(sock, "FIN", 3, 0);
+            mostrarRankingSDL(&sdl, sdl.fuente, &Ranking);
+            vaciarLista(&Ranking);
+        }
+        else if(opMenu == 1)
+            if (pantallaIngresarNombre(&sdl, sdl.fuente, &jugador) != SALIR)
+            {
+                EstadoJuego = Jugar(&laberinto, &jugador, fantasmas, config.maxFantasmas, &sdl, &ColaMovimientos, &cantmovimientos);
+                if(EstadoJuego != VICTORIA && EstadoJuego != DERROTA)
+                    printf("\nSe produjo un error durante el juego.");
+
+                if(EstadoJuego == VICTORIA && sock!=INVALID_SOCKET)
+                    enviarDatosAlServidor(sock, jugador.nombre, jugador.puntaje, cantmovimientos);
+            }
+        opMenu = menu(sdl.renderer, sdl.fuente, sdl.ancho, sdl.alto);
+    }
+
+    
+    if(sock!=INVALID_SOCKET)
+        send(sock, "FIN", 3, 0);
 
     //DESTRUCTORES Y LIBERACIONES//
     closesocket(sock);

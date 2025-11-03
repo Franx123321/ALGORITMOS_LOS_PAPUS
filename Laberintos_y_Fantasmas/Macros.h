@@ -72,6 +72,8 @@
 #define COLOR_AZUL (SDL_Color){0, 0, 255, 255}
 #define COLOR_AMARILLO (SDL_Color){255, 255, 0, 255}
 #define COLOR_GRIS (SDL_Color){128, 128, 128, 255}
+#define COLOR_VERDE (SDL_Color){0,255,0,255}
+
 
 #define DISTANCIA(X1, Y1, X2, Y2) (abs(X1 - X2) + abs(Y1 - Y2))
 #define DISTANCIA_MINIMA_ENTRADA_SALIDA 3
