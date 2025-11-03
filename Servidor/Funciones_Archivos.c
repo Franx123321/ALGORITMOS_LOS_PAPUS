@@ -23,10 +23,11 @@ int almacenarJugador(Jugador *j) {
     long registros = ftell(uf) / sizeof(Usuario);
 
     if(registros == 0) {
-        user.id_jugador = 0; // Primer usuario
+        user.id_jugador = 1; // Primer usuario
         user.p_total = j->puntaje;
         strcpy(user.nombre, j->nombre);
         j->id = user.id_jugador;
+        user.partidas_jugadas=1;
 
         fseek(uf, 0, SEEK_SET);
         fwrite(&user, sizeof(Usuario), 1, uf);
@@ -50,6 +51,7 @@ int almacenarJugador(Jugador *j) {
         strncpy(nuevo.nombre, j->nombre, sizeof(nuevo.nombre) - 1);
         nuevo.nombre[sizeof(nuevo.nombre) - 1] = '\0';
         j->id = nuevo.id_jugador;
+        nuevo.partidas_jugadas=1;
 
         fseek(uf, 0, SEEK_END);
         fwrite(&nuevo, sizeof(Usuario), 1, uf);
@@ -71,6 +73,7 @@ int cargarDatosEnArch(FILE *pf, Jugador *j, const void *dato) {
 
     user.p_total += j->puntaje; //le sumo el puntaje que obtuvo en la ultima partida
     j->id = user.id_jugador;
+    user.partidas_jugadas++;
 
     fseek(pf, -(long)sizeof(Usuario), SEEK_CUR);
     fwrite(&user, sizeof(Usuario), 1, pf);
@@ -122,9 +125,10 @@ int almacenarPartida(Jugador *j, int cantmovimientos){
     long registros = ftell(pf);
 
     if(registros == 0){
-        datos.id_partida = 0; //le asigno id 0 y le copio los datos del jugador actual
+        datos.id_partida = 1; //le asigno id 0 y le copio los datos del jugador actual
         datos.cantidad_movimientos = cantmovimientos;
         datos.id_usuario = j->id;
+        datos.Puntaje=j->puntaje;
         strcpy(datos.nombre, j->nombre);
 
         fwrite(&datos, sizeof(Partida), 1, pf); //lo escribo como nuevo registro
@@ -141,6 +145,7 @@ int almacenarPartida(Jugador *j, int cantmovimientos){
     nueva.cantidad_movimientos = cantmovimientos;
     strncpy(nueva.nombre, j->nombre, sizeof(nueva.nombre) - 1);
     nueva.nombre[sizeof(nueva.nombre) - 1] = '\0';
+    nueva.Puntaje=j->puntaje;
 
     fseek(pf, 0, SEEK_END);
     fflush(pf);

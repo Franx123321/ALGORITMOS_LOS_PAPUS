@@ -10,6 +10,7 @@ typedef struct{
     char nombre[50];
     int id_partida;
     int id_usuario;
+    int Puntaje;
     int cantidad_movimientos;
 }Partida;
 
@@ -17,6 +18,7 @@ typedef struct{
     char nombre[50];
     int id_jugador;
     int p_total;
+    int partidas_jugadas;
 }Usuario;
 
 typedef struct{
