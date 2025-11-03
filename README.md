@@ -21,4 +21,5 @@
 - Capturar un corazón sumará una vida.
 - Capturar una moneda sumará una cantidad aleatoria de puntos.
 - Ser capturado por un fantasma restará una vida.
-- El objetivo es llegar hasta la salida sin perder todas las vidas; si se pierden todas las vidas, se pierde la partida y no se suman puntos.
+- El objetivo es llegar hasta la salida sin perder todas las vidas; si se pierden todas las vidas, se pierde la partida y no se suman puntos.4
+- Jugar con sonido activado !!!
