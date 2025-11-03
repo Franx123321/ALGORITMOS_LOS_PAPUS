@@ -179,7 +179,7 @@ int menu(ContextoSDL *sdl)
         SDL_SetRenderDrawColor(sdl->renderer, 0, 0, 0, 255);
         SDL_RenderClear(sdl->renderer);
 
-        supTexto = TTF_RenderText_Blended(fuente, titulo, COLOR_ROJO);
+        supTexto = TTF_RenderText_Solid(fuente, titulo, COLOR_ROJO);
         texturaTexto = SDL_CreateTextureFromSurface(sdl->renderer, supTexto);
 
         recta.x = sdl->ancho / 2 - supTexto->w / 2;
@@ -194,7 +194,7 @@ int menu(ContextoSDL *sdl)
         for(I = 0; I < 3; I++)
         {
             color = (I == hover) ? COLOR_AMARILLO : COLOR_BLANCO;
-            supTexto = TTF_RenderText_Blended(fuente, opciones[I], color);
+            supTexto = TTF_RenderText_Solid(fuente, opciones[I], color);
             texturaTexto = SDL_CreateTextureFromSurface(sdl->renderer, supTexto);
 
             recta.x = sdl->ancho / 2 - supTexto->w / 2;
@@ -280,7 +280,7 @@ int pantallaIngresarNombre(ContextoSDL *sdl, TTF_Font *fuente, Jugador *jugador)
     *nombre = '\0';
 
     // Titulo
-    supTexto = TTF_RenderText_Blended(fuente, titulo, COLOR_ROJO);
+    supTexto = TTF_RenderText_Solid(fuente, titulo, COLOR_ROJO);
     texTitulo = SDL_CreateTextureFromSurface(sdl->renderer, supTexto);
 
     rectaTitulo.w = supTexto->w;
@@ -289,7 +289,7 @@ int pantallaIngresarNombre(ContextoSDL *sdl, TTF_Font *fuente, Jugador *jugador)
     SDL_FreeSurface(supTexto);
 
     // Descripcion
-    supTexto = TTF_RenderText_Blended(fuente, descripcion, COLOR_BLANCO);
+    supTexto = TTF_RenderText_Solid(fuente, descripcion, COLOR_BLANCO);
     texDescripcion = SDL_CreateTextureFromSurface(sdl->renderer, supTexto);
 
     rectaDesc.w = supTexto->w;
@@ -315,7 +315,7 @@ int pantallaIngresarNombre(ContextoSDL *sdl, TTF_Font *fuente, Jugador *jugador)
             SDL_RenderCopy(sdl->renderer, texDescripcion, NULL, &rectaDesc);
 
             if (*nombre) {
-                supTexto = TTF_RenderText_Blended(fuente, nombre, COLOR_BLANCO);
+                supTexto = TTF_RenderText_Solid(fuente, nombre, COLOR_BLANCO);
                 texturaTexto = SDL_CreateTextureFromSurface(sdl->renderer, supTexto);
 
                 recta.x = ancho / 2 - supTexto->w / 2;
@@ -343,7 +343,7 @@ int pantallaIngresarNombre(ContextoSDL *sdl, TTF_Font *fuente, Jugador *jugador)
 
             // Boton Iniciar
             color = hover ? COLOR_AMARILLO : COLOR_BLANCO;
-            supTexto = TTF_RenderText_Blended(fuente, iniciar, color);
+            supTexto = TTF_RenderText_Solid(fuente, iniciar, color);
             texturaTexto = SDL_CreateTextureFromSurface(sdl->renderer, supTexto);
 
             recta.x = ancho / 2 - supTexto->w / 2;
