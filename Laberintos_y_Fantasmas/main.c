@@ -96,29 +96,6 @@ int main()
             printf("\nNo se recibio ningun mensaje del servidor.\n");
     }
 
-    //JUGADOR//
-    jugador.vidas = config.vidasIniciales;
-    jugador.posY = 1;
-    jugador.posX = 0;
-    jugador.puntaje = 0;
-
-    //TABLERO//
-    //Aca se carga el contenido del laberinto: paredes, caminos, salida, fantasmas, premios y vidas extra
-    laberinto.celdas = NULL;
-    laberinto.filas = config.filas;
-    laberinto.columnas = config.columnas;
-    if(cargarLaberinto(&laberinto, fantasmas, &jugador, config) != TODO_BIEN)
-    {
-        printf("\nError al cargar el laberinto.");
-        closesocket(sock);
-        WSACleanup();
-        free(fantasmas);
-        exit(1);
-    }
-
-    //Aca se guarda la disposicion inicial del laberinto en un archivo de texto
-    guardarLaberinto(&laberinto);
-
     //SDL//
     if(inicializarSDL(&sdl, &config) != TODO_BIEN)
     {
@@ -149,6 +126,30 @@ int main()
         {
             if (pantallaIngresarNombre(&sdl, sdl.fuente, &jugador) != SALIR)
             {
+
+                //JUGADOR//
+                jugador.vidas = config.vidasIniciales;
+                jugador.posY = 1;
+                jugador.posX = 0;
+                jugador.puntaje = 0;
+            
+                //TABLERO//
+                //Aca se carga el contenido del laberinto: paredes, caminos, salida, fantasmas, premios y vidas extra
+                laberinto.celdas = NULL;
+                laberinto.filas = config.filas;
+                laberinto.columnas = config.columnas;
+                if(cargarLaberinto(&laberinto, fantasmas, &jugador, config) != TODO_BIEN)
+                {
+                    printf("\nError al cargar el laberinto.");
+                    closesocket(sock);
+                    WSACleanup();
+                    free(fantasmas);
+                    exit(1);
+                }
+            
+                //Aca se guarda la disposicion inicial del laberinto en un archivo de texto
+                guardarLaberinto(&laberinto);
+                
                 EstadoJuego = Jugar(&laberinto, &jugador, fantasmas, config.maxFantasmas, &sdl, &ColaMovimientos, &cantmovimientos);
                 if(EstadoJuego != VICTORIA && EstadoJuego != DERROTA)
                     printf("\nSe produjo un error durante el juego.");
