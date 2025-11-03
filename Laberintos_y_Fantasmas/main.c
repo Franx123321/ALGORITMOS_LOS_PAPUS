@@ -72,7 +72,9 @@ int main()
 
     dirServidor.sin_family = AF_INET;
     dirServidor.sin_port = htons(PUERTO);
-    inet_pton(AF_INET, "127.0.0.1", &dirServidor.sin_addr);
+    //inet_pton(AF_INET, "127.0.0.1", &dirServidor.sin_addr);
+    dirServidor.sin_addr.s_addr = inet_addr("127.0.0.1");
+
 
     //Intento conectarme
     if(connect(sock, (struct sockaddr*)&dirServidor, sizeof(dirServidor)) == SOCKET_ERROR)

@@ -30,7 +30,7 @@
     #include <SDL2/SDL_mixer.h>
 #endif
 
-#ifdef WIN_32
+#ifdef _WIN32
     #include <windows.h>
 #else
     #include <unistd.h>
@@ -41,8 +41,8 @@
 
 #define MIN_FILAS 15
 #define MIN_COLUMNAS 15
-#define MAX_FILAS 22    //Es lo maximo que se ve bien en pantalla, igualmente depende del tamaño de la ventana y de las celdas
-#define MAX_COLUMNAS 45 //Podria ser bastante mas, pero seria una fea relacion filas/columnas
+#define MAX_FILAS 30    //Es lo maximo que se ve bien en pantalla, igualmente depende del tamaño de la ventana y de las celdas
+#define MAX_COLUMNAS 50 //Podria ser bastante mas, pero seria una fea relacion filas/columnas
 #define MIN_PUNTOS 10
 #define MAX_PUNTOS 50
 
