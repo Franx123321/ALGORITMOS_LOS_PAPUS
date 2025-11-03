@@ -72,7 +72,6 @@ int main()
 
     dirServidor.sin_family = AF_INET;
     dirServidor.sin_port = htons(PUERTO);
-    //inet_pton(AF_INET, "127.0.0.1", &dirServidor.sin_addr);
     dirServidor.sin_addr.s_addr = inet_addr("127.0.0.1");
 
 
@@ -120,10 +119,8 @@ int main()
         else if(opMenu == 2) //TEMPORAL
         {
             crearLista(&Ranking);
-            verRanking(&Ranking,&sock);
-
-
-            mostrarRankingSDL(&sdl, sdl.fuente, &Ranking);
+            verRanking(&Ranking,&sock);//Le pide el ranking al servidor y arma la lista
+            mostrarRankingSDL(&sdl, sdl.fuente, &Ranking); //Arma el sdl para mostrar la lista ordenada
             vaciarLista(&Ranking);
         }
         else if(opMenu == 1)

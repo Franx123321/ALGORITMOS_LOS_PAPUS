@@ -17,6 +17,7 @@ typedef struct{
     char nombre[50];
     int id_jugador;
     int p_total;
+    int partidas_jugadas;
 }Usuario;
 
 
