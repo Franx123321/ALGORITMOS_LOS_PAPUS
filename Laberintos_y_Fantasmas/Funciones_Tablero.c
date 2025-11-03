@@ -253,7 +253,12 @@ int guardarLaberinto(Tablero *laberinto)
     {
         for(J = 0; J < laberinto->columnas; J++)
         {
-            fputc(laberinto->celdas[I][J], archLaberinto);
+            if(laberinto->celdas[I][J]=='J')
+                fputc('E', archLaberinto);
+            else if(laberinto->celdas[I][J]==' ')
+                fputc('.', archLaberinto);
+            else
+                fputc(laberinto->celdas[I][J], archLaberinto);
         }
         fputc('\n', archLaberinto);
     }

@@ -55,9 +55,9 @@
 
 #define MIN_ANCHO 300
 #define MIN_ALTO 300
-#define INI_ANCHO 1360
-#define INI_ALTO 800
-#define TAM_CELDA 28 //Tamaño en pixeles
+#define INI_ANCHO 1200
+#define INI_ALTO 675
+#define TAM_CELDA 26 //Tamaño en pixeles
 #define MARGEN 48    //Margen superior para el HUD
 
 #define ERROR_ARCH 0
