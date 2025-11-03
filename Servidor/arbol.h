@@ -16,6 +16,7 @@ tNodoArbol **mayorNodoArbolBinBusq(tArbolBinBusq *p);
 int eliminarRaizArbolBinBusq(tArbolBinBusq *p);
 int alturaArbolBin(tArbolBinBusq *p);
 void destruirArbol(tArbolBinBusq *p);
+int contarNodosArbol(const tArbolBinBusq *a);
 
 #endif
 
