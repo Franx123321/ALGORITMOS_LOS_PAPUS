@@ -22,7 +22,7 @@ int main()
     ContextoSDL sdl;
     tLista Ranking;
     WSADATA wsaData;
-    SOCKET sock; //No le puedo llamar socket porque asi se llama la funcion
+    SOCKET sock = INVALID_SOCKET; //No le puedo llamar socket porque asi se llama la funcion
     int timeout = 1000; // 1 seg
     struct sockaddr_in dirServidor;
     char buffer[256];
@@ -108,13 +108,9 @@ int main()
 
     //LOGICA DE JUEGO//
     opMenu = menu(&sdl);
-    while(opMenu != 3 || EstadoJuego== 0)
+    while(opMenu != 3)
     {
-        if(opMenu == 3){
-            printf("\nSe selecciono salir");
-            break;
-        }
-        else if(opMenu == 2) //TEMPORAL
+        if(opMenu == 2) //TEMPORAL
         {
             crearLista(&Ranking);
             verRanking(&Ranking,&sock);//Le pide el ranking al servidor y arma la lista
@@ -161,12 +157,15 @@ int main()
 
 
     if(sock!=INVALID_SOCKET)
+    {
         send(sock, "FIN", 3, 0);
+        closesocket(sock);
+    }
 
     //DESTRUCTORES Y LIBERACIONES//
-    closesocket(sock);
     WSACleanup();
-    destruir_matriz((void **)laberinto.celdas, laberinto.filas);
+    if(laberinto.celdas != NULL && laberinto.filas > 0)
+        destruir_matriz((void **)laberinto.celdas, laberinto.filas);
     destruirSDL(&sdl);
     free(fantasmas);
 

@@ -809,7 +809,7 @@ void victoria(ContextoSDL *sdl, TTF_Font *fuente, int puntaje, const tLista *lis
             sprintf(puntajeTexto, "Puntaje obtenido: %d", puntaje);
 
             renderizarCentrado(sdl->renderer, fuente, "Victoria!", COLOR_BLANCO, sdl->ancho, sdl->alto / 2 - 120, escalaTexto);
-            renderizarCentrado(sdl->renderer, fuente, puntajeTexto, COLOR_AMARILLO, sdl->ancho, sdl->alto / 2 - 60, escalaTexto);
+            renderizarCentrado(sdl->renderer, fuente, puntajeTexto, COLOR_AMARILLO, sdl->ancho, sdl->alto / 2 - 25, escalaTexto);
 
             yBase = sdl->alto / 2 + 20;
             alturaTotal = calcularAlturaMovimientos(fuente, textoMovimientos, escalaTexto);

@@ -332,6 +332,4 @@ void dibujarTablero(ContextoSDL *sdl, Tablero *laberinto, Jugador *j, TTF_Font *
     renderizarHUD(sdl->renderer, fuente, mensajeHUD, COLOR_AZUL, offsetX + 6, 9, escalaTexto);
     sprintf(mensajeHUD, "Puntaje: %d", j->puntaje);
     renderizarHUD(sdl->renderer, fuente, mensajeHUD, COLOR_AZUL, offsetX + 128, 9, escalaTexto);
-    sprintf(mensajeHUD, "Jugador: %s", j->nombre);
-    renderizarHUD(sdl->renderer, fuente, mensajeHUD, COLOR_AZUL, offsetX + 287, 9, escalaTexto);
 }
