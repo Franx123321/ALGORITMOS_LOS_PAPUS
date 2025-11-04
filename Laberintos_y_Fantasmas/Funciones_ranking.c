@@ -42,14 +42,14 @@ void verRanking(tLista* ranking, SOCKET *sock) {
 
         strcat(acumulador, buffer);
 
-        if (strstr(acumulador, "FIN_RANKING") != NULL)
+        if (strstr(acumulador, ";FIN_RANKING") != NULL)
             break;
     }
 
     // Procesar tokens separados por ';'
     char *token = strtok(acumulador, ";");
     while (token != NULL) {
-        if (strstr(token, "FIN_RANKING") != NULL)
+        if (strstr(token, "FIN_RANKING") == token)
             break;
 
         strcpy(nombre, "");
