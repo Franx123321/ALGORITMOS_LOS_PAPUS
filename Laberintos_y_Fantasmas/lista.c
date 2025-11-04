@@ -13,15 +13,20 @@ int listaVacia(const tLista *l)
 
 void vaciarLista(tLista *l)
 {
-    while(*l)
+    if (!l)
+        return;
+
+    while (*l)
     {
         tNodo *aux = *l;
-
         *l = aux->sig;
         free(aux->dato);
         free(aux);
     }
+
+    *l = NULL; 
 }
+
 
 int ponerAlComienzo(tLista *l, const void *d, unsigned tamDato)
 {

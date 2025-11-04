@@ -1,7 +1,12 @@
 #include "Funciones_Partida.h"
 
+#define MOVS_POR_LINEA 15
+#define SCROLL_STEP 30
+#define ALTURA_VISIBLE 250 
+
 //Se usa un algoritmo BFS, que basicamente busca la ruta mas corta hacia el jugador. Posiblemente lo explique
 //mas detallado en el readme, pero como estoy por caer en la demencia, puede ser que me haya olvidado
+
 int moverFantasmas(Tablero *laberinto, Fantasma *fantasmas, Jugador *jugador, int maxFantasmas)
 {
     int posibleX[4] = {1, -1, 0, 0},
@@ -470,7 +475,7 @@ int pantallaIngresarNombre(ContextoSDL *sdl, TTF_Font *fuente, Jugador *jugador)
 }
 
 int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFantasmas,
-            ContextoSDL *sdl, tCola *ColaMovimientos, int *cantmovimientos)
+            ContextoSDL *sdl, int *cantmovimientos)
 {
 
     char movimiento = 0, aseguradorMovimiento;
@@ -481,8 +486,13 @@ int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFant
     TTF_Font *fuenteHudLocal = NULL;
     SDL_Event evento;
     Mix_Music *musica = NULL;
+    tCola ColaMovimientos;
+    tLista ListaMovimiento;
 
-    if (!laberinto || !jugador || !fantasmas || !sdl || !ColaMovimientos)
+    crearLista(&ListaMovimiento);
+    crearCola(&ColaMovimientos);
+
+    if (!laberinto || !jugador || !fantasmas || !sdl)
         return ERROR_MEMORIA;
 
     musica = Mix_LoadMUS("assets/plinplinplon.mp3");
@@ -521,28 +531,28 @@ int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFant
                 switch(evento.key.keysym.sym)
                 {
                     case SDLK_w: movimiento = 'w';
-                                 if(!encolar(ColaMovimientos, &movimiento, sizeof(char)))
+                                 if(!encolar(&ColaMovimientos, &movimiento, sizeof(char)))
                                  {
                                     printf("No se pudo realizar un movimiento.");
                                     break;
                                  }
                                  break;
                     case SDLK_s: movimiento = 's';
-                                 if(!encolar(ColaMovimientos, &movimiento, sizeof(char)))
+                                 if(!encolar(&ColaMovimientos, &movimiento, sizeof(char)))
                                  {
                                     printf("No se pudo realizar un movimiento.");
                                     break;
                                  }
                                  break;
                     case SDLK_a: movimiento = 'a';
-                                 if(!encolar(ColaMovimientos, &movimiento, sizeof(char)))
+                                 if(!encolar(&ColaMovimientos, &movimiento, sizeof(char)))
                                  {
                                     printf("No se pudo realizar un movimiento.");
                                     break;
                                  }
                                  break;
                     case SDLK_d: movimiento = 'd';
-                                 if(!encolar(ColaMovimientos, &movimiento, sizeof(char)))
+                                 if(!encolar(&ColaMovimientos, &movimiento, sizeof(char)))
                                  {
                                     printf("No se pudo realizar un movimiento.");
                                     break;
@@ -551,14 +561,14 @@ int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFant
                     case SDLK_ESCAPE: jugando = 0;
                                       break;
                     default:     movimiento = 'z';
-                                 if(!encolar(ColaMovimientos, &movimiento, sizeof(char)))
+                                 if(!encolar(&ColaMovimientos, &movimiento, sizeof(char)))
                                  {
                                     printf("No se pudo realizar un movimiento.");
                                     break;
                                  }
                                  break;
                 }
-                if(jugando && desencolar(ColaMovimientos, &aseguradorMovimiento, sizeof(char)))
+                if(jugando && desencolar(&ColaMovimientos, &aseguradorMovimiento, sizeof(char)))
                 {
                     estado = realizarMovimiento(laberinto, jugador, fantasmas, maxFantasmas, aseguradorMovimiento);
                     (*cantmovimientos)++;
@@ -566,6 +576,9 @@ int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFant
                         jugando = 0;
                     if(estado != MOV_INVALIDO)
                     {
+                        aseguradorMovimiento=tolower(aseguradorMovimiento);
+                        if(aseguradorMovimiento=='w' || aseguradorMovimiento=='a' || aseguradorMovimiento=='s' || aseguradorMovimiento=='d')
+                            ponerAlFinal(&ListaMovimiento,&aseguradorMovimiento,sizeof(char));
                         if(moverFantasmas(laberinto, fantasmas, jugador, maxFantasmas) == DERROTA)
                         {
                             estado = DERROTA;
@@ -613,13 +626,18 @@ int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFant
     Mix_HaltMusic();
     Mix_FreeMusic(musica);
     musica = NULL;
+    vaciarCola(&ColaMovimientos);
+    
 
     SDL_SetWindowSize(sdl->ventana, Woriginal, Horiginal);
 
+    
     if(estado == VICTORIA)
-        victoria(sdl, fuenteLocal, jugador->puntaje);
+        victoria(sdl, fuenteLocal, jugador->puntaje,&ListaMovimiento);
     else if(estado == DERROTA)
-        derrota(sdl, fuenteLocal);
+        derrota(sdl, fuenteLocal,&ListaMovimiento);
+    
+    vaciarLista(&ListaMovimiento);
 
     //Liberar la fuente HUD local si fue creada
     if (fuenteHudLocal && fuenteHudLocal != fuenteHudOriginal)
@@ -698,52 +716,165 @@ int realizarMovimiento(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas
     return MOV_VALIDO;
 }
 
-void victoria(ContextoSDL *sdl, TTF_Font *fuente, int puntaje)
+
+
+void renderizarMovimientosScroll(SDL_Renderer *renderer, TTF_Font *fuente, const char *movimientos,
+                                 SDL_Color color, int anchoVentana, int yInicio, float escala, int desplazamientoY)
+{
+    int len = strlen(movimientos);
+    char linea[64];
+    int idx = 0;
+    int y = yInicio - desplazamientoY, textWidth, textHeight; // desplazamiento aplicado
+
+    TTF_SizeText(fuente, "W", NULL, &textHeight);
+
+    for (int i = 0; i < len; i++)
+    {
+        if (movimientos[i] == ' ')
+            continue;
+
+        linea[idx++] = movimientos[i];
+        linea[idx++] = ' ';
+
+        if ((i + 1) % MOVS_POR_LINEA == 0 || i == len - 1)
+        {
+            linea[idx] = '\0';
+
+            textWidth=0;
+            TTF_SizeText(fuente, linea, &textWidth, &textHeight);
+
+            if (y + textHeight >= yInicio && y <= yInicio + ALTURA_VISIBLE) // visible area
+            {
+                SDL_Surface *surface = TTF_RenderText_Blended(fuente, linea, color);
+                SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surface);
+
+                SDL_Rect dst = {
+                    .x = (anchoVentana - (int)(textWidth * escala)) / 2,
+                    .y = y,
+                    .w = (int)(surface->w * escala),
+                    .h = (int)(surface->h * escala)
+                };
+
+                SDL_RenderCopy(renderer, texture, NULL, &dst);
+
+                SDL_DestroyTexture(texture);
+                SDL_FreeSurface(surface);
+            }
+
+            y += (int)(textHeight * 1.5f * escala);
+            idx = 0;
+        }
+    }
+}
+
+
+int calcularAlturaMovimientos(TTF_Font *fuente, const char *movimientos, float escala)
+{
+    int len = strlen(movimientos);
+    int lineas = (len / 2 + MOVS_POR_LINEA - 1) / MOVS_POR_LINEA;
+    int textHeight;
+    TTF_SizeText(fuente, "W", NULL, &textHeight);
+    return (int)(lineas * textHeight * 1.5f * escala);
+}
+
+void victoria(ContextoSDL *sdl, TTF_Font *fuente, int puntaje, const tLista *listaMovimientos)
 {
     SDL_Event evento;
-    int salir = 0, actualizar = 1, ancho, alto;
-    char puntajeTexto[50];
+    int salir = 0, actualizar = 1;
+    char puntajeTexto[50], mov;
+    char textoMovimientos[2048] = "";
     SDL_Rect vp;
     float escalaTexto = 1.0f;
+    int desplazamientoY = 0,  barraAltura, yBase, alturaTotal=0, len = 0;
 
-    while(!salir)
+    // Construir texto de movimientos
+    tNodo *nodo = *listaMovimientos;
+    while (nodo && len < sizeof(textoMovimientos) - 3)
+    {
+        mov = *(char *)nodo->dato;
+        len += snprintf(textoMovimientos + len, sizeof(textoMovimientos) - len, "%c ", toupper(mov));
+        nodo = nodo->sig;
+    }
+
+    while (!salir)
     {
         if (actualizar)
         {
-            ancho = sdl->ancho;
-            alto = sdl->alto;
-
             SDL_RenderGetViewport(sdl->renderer, &vp);
-            if (vp.w > 0 && ancho > 0)
-            {
-                escalaTexto = (float)vp.w / (float)ancho;
-                if (escalaTexto <= 0.0f)
-                    escalaTexto = 1.0f;
-            }
+            escalaTexto = (vp.w > 0 && sdl->ancho > 0) ? (float)vp.w / (float)sdl->ancho : 1.0f;
 
-            SDL_SetRenderDrawColor(sdl->renderer, 0, 0, 80, 255);
+            SDL_SetRenderDrawColor(sdl->renderer, 0, 40, 0, 255);
             SDL_RenderClear(sdl->renderer);
 
             sprintf(puntajeTexto, "Puntaje obtenido: %d", puntaje);
-            renderizarCentrado(sdl->renderer, fuente, "Victoria!", COLOR_BLANCO, ancho, alto / 2 - 20, escalaTexto);
-            renderizarCentrado(sdl->renderer, fuente, puntajeTexto, COLOR_AMARILLO, ancho, alto / 2 + 75, escalaTexto);
-            renderizarCentrado(sdl->renderer, fuente, "Presiona ESC para volver...", COLOR_GRIS, ancho, alto + 250, escalaTexto);
+
+            renderizarCentrado(sdl->renderer, fuente, "Victoria!", COLOR_BLANCO, sdl->ancho, sdl->alto / 2 - 120, escalaTexto);
+            renderizarCentrado(sdl->renderer, fuente, puntajeTexto, COLOR_AMARILLO, sdl->ancho, sdl->alto / 2 - 60, escalaTexto);
+
+            yBase = sdl->alto / 2 + 20;
+            alturaTotal = calcularAlturaMovimientos(fuente, textoMovimientos, escalaTexto);
+
+            renderizarMovimientosScroll(sdl->renderer, fuente, textoMovimientos, COLOR_GRIS,
+                                        sdl->ancho, yBase, escalaTexto, desplazamientoY);
+
+            // Dibujar barra de scroll
+            if (alturaTotal > ALTURA_VISIBLE)
+            {
+                barraAltura = (ALTURA_VISIBLE * ALTURA_VISIBLE) / alturaTotal;
+                if (barraAltura < 30)
+                    barraAltura = 30;
+
+                int barraY = yBase + (desplazamientoY * (ALTURA_VISIBLE - barraAltura)) / alturaTotal;
+
+                SDL_Rect barra = {sdl->ancho - 40, barraY, 10, barraAltura};
+                SDL_SetRenderDrawColor(sdl->renderer, 180, 180, 180, 255);
+                SDL_RenderFillRect(sdl->renderer, &barra);
+            }
+
+            renderizarCentrado(sdl->renderer, fuente, "Presiona ESC para volver...", COLOR_GRIS, sdl->ancho, sdl->alto - 80, escalaTexto);
 
             SDL_RenderPresent(sdl->renderer);
-
             actualizar = 0;
         }
 
-        while(SDL_PollEvent(&evento))
+        while (SDL_PollEvent(&evento))
         {
-            if(evento.type == SDL_QUIT)
+            if (evento.type == SDL_QUIT || 
+               (evento.type == SDL_KEYDOWN && evento.key.keysym.sym == SDLK_ESCAPE))
                 salir = 1;
-            else if(evento.type == SDL_KEYDOWN && evento.key.keysym.sym == SDLK_ESCAPE)
-                salir = 1;
-            else if (evento.type == SDL_WINDOWEVENT && evento.window.event == SDL_WINDOWEVENT_RESIZED) {
+
+            else if (evento.type == SDL_MOUSEWHEEL)
+            {
+                desplazamientoY -= evento.wheel.y * SCROLL_STEP;
+                if (desplazamientoY < 0)
+                    desplazamientoY = 0;
+                if (desplazamientoY > alturaTotal - ALTURA_VISIBLE)
+                    desplazamientoY = alturaTotal - ALTURA_VISIBLE;
+                actualizar = 1;
+            }
+
+            else if (evento.type == SDL_KEYDOWN)
+            {
+                if (evento.key.keysym.sym == SDLK_UP)
+                {
+                    desplazamientoY -= SCROLL_STEP;
+                    if (desplazamientoY < 0)
+                        desplazamientoY = 0;
+                    actualizar = 1;
+                }
+                else if (evento.key.keysym.sym == SDLK_DOWN)
+                {
+                    desplazamientoY += SCROLL_STEP;
+                    if (desplazamientoY > alturaTotal - ALTURA_VISIBLE)
+                        desplazamientoY = alturaTotal - ALTURA_VISIBLE;
+                    actualizar = 1;
+                }
+            }
+
+            else if (evento.type == SDL_WINDOWEVENT && evento.window.event == SDL_WINDOWEVENT_RESIZED)
+            {
                 sdl->ancho = evento.window.data1;
                 sdl->alto = evento.window.data2;
-
                 actualizar = 1;
             }
         }
@@ -752,50 +883,104 @@ void victoria(ContextoSDL *sdl, TTF_Font *fuente, int puntaje)
     }
 }
 
-void derrota(ContextoSDL *sdl, TTF_Font *fuente)
+void derrota(ContextoSDL *sdl, TTF_Font *fuente, const tLista *listaMovimientos)
 {
     SDL_Event evento;
-    int salir = 0, actualizar = 1, ancho, alto;
+    int salir = 0, actualizar = 1;
+    char textoMovimientos[2048] = "", mov;
     SDL_Rect vp;
     float escalaTexto = 1.0f;
+    int desplazamientoY = 0, barraAltura, yBase, alturaTotal=0;
 
-    while(!salir)
+    // Construir texto de movimientos
+    tNodo *nodo = *listaMovimientos;
+    int len = 0;
+    while (nodo && len < sizeof(textoMovimientos) - 3)
+    {
+        mov = *(char *)nodo->dato;
+        if (strchr("WASDwasd", mov))
+            len += snprintf(textoMovimientos + len, sizeof(textoMovimientos) - len, "%c ", toupper(mov));
+        nodo = nodo->sig;
+    }
+
+
+    while (!salir)
     {
         if (actualizar)
         {
-            ancho = sdl->ancho;
-            alto = sdl->alto;
-
             SDL_RenderGetViewport(sdl->renderer, &vp);
-            if (vp.w > 0 && ancho > 0)
-            {
-                escalaTexto = (float)vp.w / (float)ancho;
-                if (escalaTexto <= 0.0f)
-                    escalaTexto = 1.0f;
-            }
+            escalaTexto = (vp.w > 0 && sdl->ancho > 0) ? (float)vp.w / (float)sdl->ancho : 1.0f;
 
             SDL_SetRenderDrawColor(sdl->renderer, 60, 0, 0, 255);
             SDL_RenderClear(sdl->renderer);
 
-            renderizarCentrado(sdl->renderer, fuente, "Game over", COLOR_ROJO, ancho, alto / 2 - 20, escalaTexto);
-            renderizarCentrado(sdl->renderer, fuente, "No se obtendran puntos.", COLOR_ROJO, ancho, alto / 2 + 75, escalaTexto);
-            renderizarCentrado(sdl->renderer, fuente, "Presiona ESC para salir...", COLOR_GRIS, ancho, alto + 250, escalaTexto);
+            renderizarCentrado(sdl->renderer, fuente, "Game Over", COLOR_ROJO, sdl->ancho, sdl->alto / 2 - 120, escalaTexto);
+            renderizarCentrado(sdl->renderer, fuente, "No se obtendran puntos.", COLOR_ROJO, sdl->ancho, sdl->alto / 2 - 60, escalaTexto);
+
+            yBase = sdl->alto / 2 + 20;
+            alturaTotal = calcularAlturaMovimientos(fuente, textoMovimientos, escalaTexto);
+
+            renderizarMovimientosScroll(sdl->renderer, fuente, textoMovimientos, COLOR_GRIS,
+                                        sdl->ancho, yBase, escalaTexto, desplazamientoY);
+
+            // Dibujar barra scroll
+            if (alturaTotal > ALTURA_VISIBLE)
+            {
+                barraAltura = (ALTURA_VISIBLE * ALTURA_VISIBLE) / alturaTotal;
+                if (barraAltura < 30)
+                    barraAltura = 30;
+
+                int barraY = yBase + (desplazamientoY * (ALTURA_VISIBLE - barraAltura)) / alturaTotal;
+
+                SDL_Rect barra = {sdl->ancho - 40, barraY, 10, barraAltura};
+                SDL_SetRenderDrawColor(sdl->renderer, 180, 180, 180, 255);
+                SDL_RenderFillRect(sdl->renderer, &barra);
+            }
+
+            renderizarCentrado(sdl->renderer, fuente, "Presiona ESC para salir...", COLOR_GRIS, sdl->ancho, sdl->alto - 80, escalaTexto);
 
             SDL_RenderPresent(sdl->renderer);
-
             actualizar = 0;
         }
 
-        while(SDL_PollEvent(&evento))
+        while (SDL_PollEvent(&evento))
         {
-            if(evento.type == SDL_QUIT)
+            if (evento.type == SDL_QUIT || 
+               (evento.type == SDL_KEYDOWN && evento.key.keysym.sym == SDLK_ESCAPE))
                 salir = 1;
-            else if(evento.type == SDL_KEYDOWN && evento.key.keysym.sym == SDLK_ESCAPE)
-                salir = 1;
-            else if (evento.type == SDL_WINDOWEVENT && evento.window.event == SDL_WINDOWEVENT_RESIZED) {
+
+            else if (evento.type == SDL_MOUSEWHEEL)
+            {
+                desplazamientoY -= evento.wheel.y * SCROLL_STEP;
+                if (desplazamientoY < 0)
+                    desplazamientoY = 0;
+                if (desplazamientoY > alturaTotal - ALTURA_VISIBLE)
+                    desplazamientoY = alturaTotal - ALTURA_VISIBLE;
+                actualizar = 1;
+            }
+
+            else if (evento.type == SDL_KEYDOWN)
+            {
+                if (evento.key.keysym.sym == SDLK_UP)
+                {
+                    desplazamientoY -= SCROLL_STEP;
+                    if (desplazamientoY < 0)
+                        desplazamientoY = 0;
+                    actualizar = 1;
+                }
+                else if (evento.key.keysym.sym == SDLK_DOWN)
+                {
+                    desplazamientoY += SCROLL_STEP;
+                    if (desplazamientoY > alturaTotal - ALTURA_VISIBLE)
+                        desplazamientoY = alturaTotal - ALTURA_VISIBLE;
+                    actualizar = 1;
+                }
+            }
+
+            else if (evento.type == SDL_WINDOWEVENT && evento.window.event == SDL_WINDOWEVENT_RESIZED)
+            {
                 sdl->ancho = evento.window.data1;
                 sdl->alto = evento.window.data2;
-
                 actualizar = 1;
             }
         }

@@ -28,7 +28,7 @@ int inicializarSDL(ContextoSDL *sdl, const Configuracion *config)
         SDL_Quit();
         return ERROR_SDL;
     }
-
+    
     SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1");
 
     sdl->ventana = SDL_CreateWindow("Laberintos y Fantasmas", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,

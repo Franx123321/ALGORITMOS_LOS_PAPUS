@@ -20,7 +20,6 @@ int main()
     Jugador jugador;
     Fantasma *fantasmas;
     ContextoSDL sdl;
-    tCola ColaMovimientos;
     tLista Ranking;
     WSADATA wsaData;
     SOCKET sock; //No le puedo llamar socket porque asi se llama la funcion
@@ -109,7 +108,6 @@ int main()
 
     //LOGICA DE JUEGO//
     opMenu = menu(&sdl);
-    crearCola(&ColaMovimientos);
     while(opMenu != 3 || EstadoJuego== 0)
     {
         if(opMenu == 3){
@@ -151,7 +149,7 @@ int main()
                 //Aca se guarda la disposicion inicial del laberinto en un archivo de texto
                 guardarLaberinto(&laberinto);
 
-                EstadoJuego = Jugar(&laberinto, &jugador, fantasmas, config.maxFantasmas, &sdl, &ColaMovimientos, &cantmovimientos);
+                EstadoJuego = Jugar(&laberinto, &jugador, fantasmas, config.maxFantasmas, &sdl, &cantmovimientos);
                 if(EstadoJuego != VICTORIA && EstadoJuego != DERROTA)
                     printf("\nSe produjo un error durante el juego.");
 
@@ -168,7 +166,6 @@ int main()
     //DESTRUCTORES Y LIBERACIONES//
     closesocket(sock);
     WSACleanup();
-    vaciarCola(&ColaMovimientos);
     destruir_matriz((void **)laberinto.celdas, laberinto.filas);
     destruirSDL(&sdl);
     free(fantasmas);
