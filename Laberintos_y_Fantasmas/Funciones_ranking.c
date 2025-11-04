@@ -33,7 +33,7 @@ void verRanking(tLista* ranking, SOCKET *sock) {
         buffer[bytes] = '\0';
 
         // Evitamos desbordar acumulador
-        if (strlen(acumulador) + strlen(buffer) >= sizeof(acumulador) - 1) 
+        if (strlen(acumulador) + strlen(buffer) >= sizeof(acumulador) - 1)
         {
             printf("Advertencia: datos de ranking demasiado grandes, truncando.\n");
             strncat(acumulador, buffer, sizeof(acumulador) - strlen(acumulador) - 1);
@@ -117,10 +117,10 @@ void mostrarRankingSDL(ContextoSDL *sdl, TTF_Font *fuente, tLista *ranking)
     const int rowHeight = 48;
 
     // Contar jugadores
-    while (act) 
-    { 
-        total++; 
-        act = act->sig; 
+    while (act)
+    {
+        total++;
+        act = act->sig;
     }
 
     while (ejecutando)
@@ -164,7 +164,7 @@ void mostrarRankingSDL(ContextoSDL *sdl, TTF_Font *fuente, tLista *ranking)
         SDL_FreeSurface(suf);
         SDL_DestroyTexture(tex);
 
-        // PARTIDAS 
+        // PARTIDAS
         suf = TTF_RenderText_Solid(fuente, "PARTIDAS", COLOR_AMARILLO);
         tex = SDL_CreateTextureFromSurface(renderer, suf);
         r = (SDL_Rect){ colGamesX + (colGamesW - suf->w) / 2, headerY, suf->w, suf->h };
@@ -182,7 +182,7 @@ void mostrarRankingSDL(ContextoSDL *sdl, TTF_Font *fuente, tLista *ranking)
 
         // FILAS
         act = *ranking;
-        for(k = 0; k < scroll && act; k++) 
+        for(k = 0; k < scroll && act; k++)
             act = act->sig;
 
         y = startY;
@@ -217,16 +217,16 @@ void mostrarRankingSDL(ContextoSDL *sdl, TTF_Font *fuente, tLista *ranking)
             TTF_SizeText(fuente, nameTrunc, &textW, &textH);
             int maxWidth = colGamesX - (colNameX + 10) - 10;
 
-            if (textW > maxWidth) 
+            if (textW > maxWidth)
             {
                 int len = strlen(nameTrunc);
-                while (len > 0) 
+                while (len > 0)
                 {
                     nameTrunc[len--] = '\0';
                     char temp[70];
                     snprintf(temp, sizeof(temp), "%s...", nameTrunc);
                     TTF_SizeText(fuente, temp, &textW, &textH);
-                    if (textW <= maxWidth) 
+                    if (textW <= maxWidth)
                     {
                         strcpy(nameTrunc, temp);
                         break;
@@ -265,7 +265,7 @@ void mostrarRankingSDL(ContextoSDL *sdl, TTF_Font *fuente, tLista *ranking)
         }
 
         // Scrollbar
-        if (total > visible) 
+        if (total > visible)
         {
             trackH = visible * rowHeight;
             barraH = (float)visible / total * trackH;
@@ -282,21 +282,20 @@ void mostrarRankingSDL(ContextoSDL *sdl, TTF_Font *fuente, tLista *ranking)
         {
             if (e.type == SDL_QUIT)
                 ejecutando = 0;
-            else if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_ESCAPE) 
+            else if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_ESCAPE)
                 ejecutando = 0;
             else if (e.type == SDL_MOUSEWHEEL)
             {
-                if (e.wheel.y > 0 && scroll > 0) 
+                if (e.wheel.y > 0 && scroll > 0)
                     scroll--;
-                else if (e.wheel.y < 0 && scroll + visible < total) 
+                else if (e.wheel.y < 0 && scroll + visible < total)
                     scroll++;
             }
             else if (e.type == SDL_MOUSEBUTTONDOWN && e.button.button == SDL_BUTTON_LEFT)
             {
-                mx = e.button.x; 
+                mx = e.button.x;
                 my = e.button.y;
-                if (mx >= rCerrar.x && mx <= rCerrar.x + rCerrar.w &&
-                    my >= rCerrar.y && my <= rCerrar.y + rCerrar.h)
+                if (EN_RECT(mx, my, rCerrar))
                     ejecutando = 0;
             }
         }

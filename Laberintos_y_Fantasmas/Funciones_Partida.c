@@ -156,6 +156,8 @@ int encontrarFantasma(Fantasma *fantasmas, int maxFantasmas, int x, int y)
 }
 
 
+//FUNCIONES DE PARTIDA//
+
 /**
     == Pantalla principal ==
 
@@ -238,8 +240,7 @@ int menu(ContextoSDL *sdl)
 
                 for(I = 0; I < 3; I ++)
                 {
-                    if (x >= rectaOpciones[I].x && x <= rectaOpciones[I].x + rectaOpciones[I].w &&
-                        y >= rectaOpciones[I].y && y <= rectaOpciones[I].y + rectaOpciones[I].h)
+                    if (EN_RECT(x, y, rectaOpciones[I]))
                     {
                         hover = I;
                         break;
@@ -253,8 +254,7 @@ int menu(ContextoSDL *sdl)
 
                 for (I = 0; I < 3; I++)
                 {
-                    if (x >= rectaOpciones[I].x && x <= rectaOpciones[I].x + rectaOpciones[I].w &&
-                        y >= rectaOpciones[I].y && y <= rectaOpciones[I].y + rectaOpciones[I].h)
+                    if (EN_RECT(x, y, rectaOpciones[I]))
                     {
                         op = BASE_OPCIONES + I;
                         ejecutando = 0;
@@ -397,13 +397,7 @@ int pantallaIngresarNombre(ContextoSDL *sdl, TTF_Font *fuente, Jugador *jugador)
                 y = evento.motion.y;
 
                 prevHover = hover;
-                hover = 0;
-
-                if (x >= rectaBoton.x && x <= rectaBoton.x + rectaBoton.w &&
-                    y >= rectaBoton.y && y <= rectaBoton.y + rectaBoton.h)
-                {
-                    hover = 1;
-                }
+                hover = EN_RECT(x, y, rectaBoton);
 
                 if (hover != prevHover)
                     actualizar = 1;
@@ -413,8 +407,7 @@ int pantallaIngresarNombre(ContextoSDL *sdl, TTF_Font *fuente, Jugador *jugador)
                 x = evento.button.x;
                 y = evento.button.y;
 
-                if (x >= rectaBoton.x && x <= rectaBoton.x + rectaBoton.w &&
-                    y >= rectaBoton.y && y <= rectaBoton.y + rectaBoton.h)
+                if (EN_RECT(x, y, rectaBoton))
                 {
                     if (*nombre)
                     {
@@ -508,6 +501,8 @@ int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFant
         printf("\nERROR al reproducir la musica: %s", Mix_GetError());
 
     SDL_GetWindowSize(sdl->ventana, &Woriginal, &Horiginal);
+    SDL_SetWindowSize(sdl->ventana, laberinto->columnas * TAM_CELDA, MARGEN + laberinto->filas * TAM_CELDA);
+    SDL_SetWindowResizable(sdl->ventana, SDL_FALSE);
 
     // Inicializar punteros locales a las fuentes iniciales (simplificar)
     if (sdl->fuente)
@@ -546,6 +541,7 @@ int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFant
                     case SDLK_s: movimiento = 's';
                                  if(!encolar(ColaMovimientos, &movimiento, sizeof(char)))
                                  {
+
                                     printf("No se pudo realizar un movimiento.");
                                     break;
                                  }
@@ -615,8 +611,6 @@ int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFant
         //Usar la fuente HUD local si existe, sino la pasada por parametro
         TTF_Font *fuenteParaHUD = (fuenteHudLocal ? fuenteHudLocal : fuenteHudOriginal);
 
-        SDL_SetWindowSize(sdl->ventana, laberinto->columnas * TAM_CELDA, MARGEN + laberinto->filas * TAM_CELDA);
-
         dibujarTablero(sdl, laberinto, jugador, fuenteParaHUD, TAM_CELDA, 0, escalaTexto);
 
         SDL_RenderPresent(sdl->renderer);
@@ -629,6 +623,9 @@ int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFant
     musica = NULL;
 
     SDL_SetWindowSize(sdl->ventana, Woriginal, Horiginal);
+    SDL_SetWindowResizable(sdl->ventana, SDL_TRUE);
+    sdl->ancho = Woriginal;
+    sdl->alto = Horiginal;
 
     if(estado == VICTORIA)
         victoria(sdl, fuenteLocal, jugador->puntaje);

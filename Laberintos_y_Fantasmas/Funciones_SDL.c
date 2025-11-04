@@ -6,15 +6,13 @@ int inicializarSDL(ContextoSDL *sdl, const Configuracion *config)
     int ancho, alto, base, tamMedio, flags, inicializado;
     SDL_Surface *surSprites;
     SDL_RWops *streamSprites;
+    SDL_Rect escritorio;
 
     if(!sdl || !config)
     {
         printf("\nArgumentos invalidos.");
         return ERROR_SDL;
     }
-
-    ancho = INI_ANCHO;
-    alto = INI_ALTO;
 
     if (SDL_Init(SDL_INIT_VIDEO) < 0)
     {
@@ -27,6 +25,14 @@ int inicializarSDL(ContextoSDL *sdl, const Configuracion *config)
         printf("\nERROR al inicializar el sistema de fuentes: %s", TTF_GetError());
         SDL_Quit();
         return ERROR_SDL;
+    }
+
+    ancho = INI_ANCHO;
+    alto = INI_ALTO;
+
+    if (SDL_GetDisplayUsableBounds(0, &escritorio) >= 0) {
+        ancho = MIN(ancho, escritorio.w - 128);
+        alto = MIN(alto, escritorio.h - 64);
     }
 
     SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1");

@@ -38,6 +38,7 @@
 
 #define MAX(X,Y) ((X)>(Y)?(X):(Y))
 #define MIN(X,Y) ((X)<(Y)?(X):(Y))
+#define EN_RECT(X,Y,R) ((X)>=(R.x)&&(X)<(R.x+R.w)&&(Y)>=(R.y)&&(Y)<(R.y+R.h))
 
 #define MIN_FILAS 15
 #define MIN_COLUMNAS 15
