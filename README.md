@@ -14,6 +14,10 @@ Si recibió el proyecto sin las carpetas Assets, SDL2, ni 3 archivos .dll dentro
 10. Repita el paso anterior para el proyecto TP, allí en Linker Settings debería ver: ws2_32, SDL2main, SDL2, SDL_ttf, SDL_mixer; si no las ve, agreguelas.
 11. También en Build Options de TP, en Search Directories, debería ver SDL2\include; si no lo ve, agreguelo.
 12. El proyecto ya debería haber quedado correctamente setteado para seguir adelante.
+
+### Alternativa:
+
+1. Clone el repositorio localmente y descarte lo que recibió.
   
 
 ## Para ejecutar el juego (en CodeBlocks setup 20.03 en adelante):
