@@ -2,7 +2,7 @@
 
 ## Guía para settear el proyecto correctamente:
 Si recibió el proyecto sin las carpetas Assets, SDL2, ni 3 archivos .dll dentro de la carpeta Laberintos_y_Fantasmas, deberá seguir los siguientes pasos:
-1. Acceda al siguiente enlace: https://drive.google.com/file/d/133cfl5eu87jb0f3V79FMea1kgnK5Oobu/view?usp=drive_link
+1. Acceda al siguiente enlace: https://drive.google.com/file/d/133cfl5eu87jb0f3V79FMea1kgnK5Oobu/view?usp=sharing
 2. Descargue el .zip que ahí se encuentra (prometo que no es una ZipBomb).
 3. Descomprima el zip, habrá una carpeta "DESCARGABLES LABERINTOS Y FANTASMAS".
 4. Copie todo el contenido dentro de la carpeta recién mencionada.
