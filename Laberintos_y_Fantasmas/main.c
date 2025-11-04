@@ -109,20 +109,20 @@ int main()
     //LOGICA DE JUEGO//
     opMenu = menu(&sdl);
     crearCola(&ColaMovimientos);
-    while(opMenu != 3 || EstadoJuego== 0)
+    while(opMenu != OPCION_SALIR || EstadoJuego== 0)
     {
-        if(opMenu == 3){
+        if(opMenu == OPCION_SALIR){
             printf("\nSe selecciono salir");
             break;
         }
-        else if(opMenu == 2) //TEMPORAL
+        else if(opMenu == OPCION_RANKING) //TEMPORAL
         {
             crearLista(&Ranking);
             verRanking(&Ranking,&sock);//Le pide el ranking al servidor y arma la lista
             mostrarRankingSDL(&sdl, sdl.fuente, &Ranking); //Arma el sdl para mostrar la lista ordenada
             vaciarLista(&Ranking);
         }
-        else if(opMenu == 1)
+        else if(opMenu == OPCION_JUGAR)
             if (pantallaIngresarNombre(&sdl, sdl.fuente, &jugador) != SALIR)
             {
 

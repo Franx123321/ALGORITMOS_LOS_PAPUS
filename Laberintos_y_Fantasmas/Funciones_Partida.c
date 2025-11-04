@@ -156,9 +156,16 @@ int encontrarFantasma(Fantasma *fantasmas, int maxFantasmas, int x, int y)
 }
 
 
+/**
+    == Pantalla principal ==
 
+    Se muestran las opciones de juego.
 
-//FUNCIONES DE PARTIDA//
+    Devuelve:
+    - OPCION_JUGAR (BASE_OPCIONES + 1): Jugar
+    - OPCION_RANKING (BASE_OPCIONES + 2): Ranking
+    - OPCION_SALIR (BASE_OPCIONES + 3): Salir
+*/
 int menu(ContextoSDL *sdl)
 {
     SDL_Event evento;
@@ -215,7 +222,7 @@ int menu(ContextoSDL *sdl)
         {
             if(evento.type == SDL_QUIT)
             {
-                op = 3;
+                op = OPCION_SALIR;
                 ejecutando = 0;
             }
             else if (evento.type == SDL_WINDOWEVENT && evento.window.event == SDL_WINDOWEVENT_RESIZED) {
@@ -249,7 +256,7 @@ int menu(ContextoSDL *sdl)
                     if (x >= rectaOpciones[I].x && x <= rectaOpciones[I].x + rectaOpciones[I].w &&
                         y >= rectaOpciones[I].y && y <= rectaOpciones[I].y + rectaOpciones[I].h)
                     {
-                        op = I + 1; // 1=Jugar, 2=Ranking, 3=Salir
+                        op = BASE_OPCIONES + I;
                         ejecutando = 0;
                     }
                 }
@@ -262,6 +269,13 @@ int menu(ContextoSDL *sdl)
     return op;
 }
 
+/**
+    Funcion que muestra la pantalla de ingresar nombre previa al juego.
+
+    Devuelve:
+    - SEGUIR (1): continuar al juego.
+    - SALIR (0): volver a la pantalla de inicio.
+*/
 int pantallaIngresarNombre(ContextoSDL *sdl, TTF_Font *fuente, Jugador *jugador)
 {
     SDL_Event evento;
@@ -404,7 +418,7 @@ int pantallaIngresarNombre(ContextoSDL *sdl, TTF_Font *fuente, Jugador *jugador)
                 {
                     if (*nombre)
                     {
-                        op = 1;
+                        op = SEGUIR;
                         ejecutando = 0;
                     }
                     else {
@@ -419,7 +433,7 @@ int pantallaIngresarNombre(ContextoSDL *sdl, TTF_Font *fuente, Jugador *jugador)
                 {
                     if (*nombre)
                     {
-                        op = 1;
+                        op = SEGUIR;
                         ejecutando = 0;
                     }
                     else {
@@ -458,9 +472,19 @@ int pantallaIngresarNombre(ContextoSDL *sdl, TTF_Font *fuente, Jugador *jugador)
     SDL_DestroyTexture(texTitulo);
     SDL_DestroyTexture(texDescripcion);
 
-    return op; // 1 = seguir, SALIR (0) = salir
+    return op;
 }
 
+/**
+    Bucle principal del juego y pantallas de victoria y derrota.
+
+    Devuelve:
+    - ERROR_MEMORIA (0): Si se paso algun parametro incorrectamente.
+    - MOV_VALIDO (1): El jugador hizo un mov. valido y no fue limpiado.
+    - MOV_INVALIDO (0): El jugador hizo un mov. invalido y no fue limpiado.
+    - VICTORIA (2): Se llego a la salida exitosamente.
+    - DERROTA (-1): Un fantasma mato al jugador.
+*/
 int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFantasmas,
             ContextoSDL *sdl, tCola *ColaMovimientos, int *cantmovimientos)
 {

@@ -49,8 +49,14 @@
 #define MOV_INVALIDO 0
 #define MOV_VALIDO 1
 
+#define BASE_OPCIONES 10
+#define OPCION_JUGAR (BASE_OPCIONES + 0)
+#define OPCION_RANKING (BASE_OPCIONES + 1)
+#define OPCION_SALIR (BASE_OPCIONES + 2)
+
 #define VICTORIA 2
 #define DERROTA -1
+#define SEGUIR 1
 #define SALIR 0
 
 #define MIN_ANCHO 300
