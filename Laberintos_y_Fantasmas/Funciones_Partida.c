@@ -481,9 +481,8 @@ int pantallaIngresarNombre(ContextoSDL *sdl, TTF_Font *fuente, Jugador *jugador)
 int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFantasmas,
             ContextoSDL *sdl, tCola *ColaMovimientos, int *cantmovimientos)
 {
-
     char movimiento = 0, aseguradorMovimiento;
-    int estado = 1, jugando = 1, Woriginal, Horiginal, tamFuenteHudActual = 0, tamFuenteHudDeseado;
+    int estado = 1, jugando = 1, Woriginal, Horiginal, tamFuenteHudActual = 0, tamFuenteHudDeseado, tiempoIni;
     float escalaTexto = 1.0f;
     TTF_Font *fuenteLocal = NULL;
     TTF_Font *fuenteHudOriginal = NULL;
@@ -491,8 +490,15 @@ int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFant
     SDL_Event evento;
     Mix_Music *musica = NULL;
 
+    Movimiento mov;
+    tLista movimientos;
+
     if (!laberinto || !jugador || !fantasmas || !sdl || !ColaMovimientos)
         return ERROR_MEMORIA;
+
+    crearLista(&movimientos);
+
+    tiempoIni = SDL_GetTicks();
 
     musica = Mix_LoadMUS("assets/plinplinplon.mp3");
     if(!musica)
@@ -578,6 +584,12 @@ int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFant
                         jugando = 0;
                     if(estado != MOV_INVALIDO)
                     {
+                        mov.sdl = sdl;
+                        mov.numero = *cantmovimientos;
+                        mov.direccion = aseguradorMovimiento;
+                        mov.tiempo = SDL_GetTicks() - tiempoIni;
+                        ponerAlFinal(&movimientos, &mov, sizeof(Movimiento));
+
                         if(moverFantasmas(laberinto, fantasmas, jugador, maxFantasmas) == DERROTA)
                         {
                             estado = DERROTA;
@@ -628,9 +640,11 @@ int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFant
     sdl->alto = Horiginal;
 
     if(estado == VICTORIA)
-        victoria(sdl, fuenteLocal, jugador->puntaje);
+        victoria(sdl, fuenteLocal, jugador->puntaje, &movimientos);
     else if(estado == DERROTA)
-        derrota(sdl, fuenteLocal);
+        derrota(sdl, fuenteLocal, &movimientos);
+
+    vaciarLista(&movimientos);
 
     //Liberar la fuente HUD local si fue creada
     if (fuenteHudLocal && fuenteHudLocal != fuenteHudOriginal)
@@ -704,7 +718,7 @@ int realizarMovimiento(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas
     return MOV_VALIDO;
 }
 
-void victoria(ContextoSDL *sdl, TTF_Font *fuente, int puntaje)
+void victoria(ContextoSDL *sdl, TTF_Font *fuente, int puntaje, tLista *movimientos)
 {
     SDL_Event evento;
     int salir = 0, actualizar = 1, ancho, alto;
@@ -758,7 +772,7 @@ void victoria(ContextoSDL *sdl, TTF_Font *fuente, int puntaje)
     }
 }
 
-void derrota(ContextoSDL *sdl, TTF_Font *fuente)
+void derrota(ContextoSDL *sdl, TTF_Font *fuente, tLista *movimientos)
 {
     SDL_Event evento;
     int salir = 0, actualizar = 1, ancho, alto;

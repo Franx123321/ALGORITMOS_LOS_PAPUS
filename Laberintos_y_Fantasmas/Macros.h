@@ -137,6 +137,12 @@ typedef struct {
 } ContextoSDL;
 
 typedef struct{
+    int numero;
+    char direccion;
+    int tiempo;
+}Movimiento;
+
+typedef struct{
     int x,
         y;
 }NodoPos;
