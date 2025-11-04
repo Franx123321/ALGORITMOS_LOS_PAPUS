@@ -103,7 +103,6 @@ int main()
         closesocket(sock);
         WSACleanup();
         free(fantasmas);
-        destruir_matriz((void **)laberinto.celdas, laberinto.filas);
         exit(1);
     }
 
@@ -157,6 +156,9 @@ int main()
 
                 if(EstadoJuego == VICTORIA && sock!=INVALID_SOCKET)
                     enviarDatosAlServidor(sock, jugador.nombre, jugador.puntaje, cantmovimientos);
+
+                // Limpiar matriz luego del juego
+                destruir_matriz((void ***) &laberinto.celdas, laberinto.filas);
             }
         opMenu = menu(&sdl);
     }
@@ -169,7 +171,6 @@ int main()
     closesocket(sock);
     WSACleanup();
     vaciarCola(&ColaMovimientos);
-    destruir_matriz((void **)laberinto.celdas, laberinto.filas);
     destruirSDL(&sdl);
     free(fantasmas);
 

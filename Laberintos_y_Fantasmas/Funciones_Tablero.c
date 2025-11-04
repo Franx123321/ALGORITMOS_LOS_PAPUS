@@ -15,7 +15,7 @@ int cargarLaberinto(Tablero *laberinto, Fantasma *fantasmas, Jugador *jugador, C
 
     if(inicializarTablero(laberinto) != TODO_BIEN)
     {
-        destruir_matriz((void **)laberinto->celdas, laberinto->filas);
+        destruir_matriz((void ***) &laberinto->celdas, laberinto->filas);
         return ERROR_MEMORIA;
     }
 
@@ -24,14 +24,14 @@ int cargarLaberinto(Tablero *laberinto, Fantasma *fantasmas, Jugador *jugador, C
     if(generarLaberinto(laberinto, 1, 1) != TODO_BIEN)
     {
         printf("\nError al inicializar el laberinto.");
-        destruir_matriz((void **)laberinto->celdas, laberinto->filas);
+        destruir_matriz((void ***) &laberinto->celdas, laberinto->filas);
         return ERROR_MEMORIA;
     }
 
     if(agujerearLaberinto(laberinto) != TODO_BIEN)
     {
         printf("\nError al agujerear el laberinto.");
-        destruir_matriz((void **)laberinto->celdas, laberinto->filas);
+        destruir_matriz((void ***) &laberinto->celdas, laberinto->filas);
         return ERROR_MEMORIA;
     }
 
@@ -41,25 +41,28 @@ int cargarLaberinto(Tablero *laberinto, Fantasma *fantasmas, Jugador *jugador, C
     if(generarSalida(laberinto) != TODO_BIEN)
     {
         printf("\nError al generar la salida.");
-        destruir_matriz((void **)laberinto->celdas, laberinto->filas);
+        destruir_matriz((void ***) &laberinto->celdas, laberinto->filas);
         return ERROR_MEMORIA;
     }
 
     if(generarFantasmas(laberinto, fantasmas, config.maxFantasmas) == ERROR_GENERACION)
     {
         printf("\nError generando fantasmas.");
+        destruir_matriz((void ***) &laberinto->celdas, laberinto->filas);
         return ERROR_GENERACION;
     }
 
     if(colocarVidasExtra(laberinto, config.maxVidasExtra) == ERROR_GENERACION)
     {
         printf("\nError generando vidas extra.");
+        destruir_matriz((void ***) &laberinto->celdas, laberinto->filas);
         return ERROR_GENERACION;
     }
 
     if(colocarPremios(laberinto, config.maxPremios) == ERROR_GENERACION)
     {
         printf("\nError generando premios.");
+        destruir_matriz((void ***) &laberinto->celdas, laberinto->filas);
         return ERROR_GENERACION;
     }
 
@@ -93,18 +96,20 @@ char **crear_matriz(int filas, int columnas)
     return matriz;
 }
 
-void destruir_matriz(void **matriz, int filas)
+void destruir_matriz(void ***matriz, int filas)
 {
     int I;
 
-    if(!matriz)
+    if(!*matriz)
         return;
 
     for (I = 0; I < filas; I++)
     {
-        free(matriz[I]);
+        free(*(*matriz + I));
     }
-    free(matriz);
+
+    free(*matriz);
+    *matriz = NULL;
 }
 
 void mostrar_matriz(char **matriz, int filas, int col)
@@ -224,7 +229,7 @@ int generarSalida(Tablero *laberinto)
     if(filas < 3 || columnas < 3)
         return ERROR_MEMORIA;
 
-    //Busca la fila desde la que va a colocar la salida
+    // Busca la fila impar en la que ira la salida
     filaSalida = 1 + rand() % ((filas - 1) / 2) * 2;
 
     // Pone la salida

@@ -496,7 +496,7 @@ int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFant
     else
         fuenteHudOriginal = NULL;
 
-  
+
     while(jugando && estado != VICTORIA)
     {
         while(SDL_PollEvent(&evento))
@@ -571,8 +571,6 @@ int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFant
         SDL_SetRenderDrawColor(sdl->renderer, 0, 0, 0, 255);
         SDL_RenderClear(sdl->renderer);
 
-        // Valores mayores a 24 crashean todo al renderizar
-        // ciertas letras
         tamFuenteHudDeseado = 24;
 
         if (tamFuenteHudDeseado != tamFuenteHudActual)
@@ -592,9 +590,9 @@ int Jugar(Tablero *laberinto, Jugador *jugador, Fantasma *fantasmas, int maxFant
 
         //Usar la fuente HUD local si existe, sino la pasada por parametro
         TTF_Font *fuenteParaHUD = (fuenteHudLocal ? fuenteHudLocal : fuenteHudOriginal);
-        
+
         SDL_SetWindowSize(sdl->ventana, laberinto->columnas * TAM_CELDA, MARGEN + laberinto->filas * TAM_CELDA);
-        
+
         dibujarTablero(sdl, laberinto, jugador, fuenteParaHUD, TAM_CELDA, 0, escalaTexto);
 
         SDL_RenderPresent(sdl->renderer);
