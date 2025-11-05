@@ -21,7 +21,6 @@ typedef struct{
 }Usuario;
 
 
-void printUsuario(const void *dato);
 int cmpPuntajeDesc(const void *a, const void *b);
 
 void verRanking(tLista*, SOCKET* sock);

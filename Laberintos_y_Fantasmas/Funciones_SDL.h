@@ -5,8 +5,6 @@
 
 int inicializarSDL(ContextoSDL *sdl, const Configuracion *config);
 void destruirSDL(ContextoSDL *sdl);
-int renderizarTexto(SDL_Renderer *renderer, TTF_Font *fuente,
-                    const char *mensaje, SDL_Color color, int ancho, int alto, int tiempo);
 void renderizarHUD(SDL_Renderer *renderer, TTF_Font *fuente, const char *mensaje,
                     SDL_Color color, int x, int y, float escala);
 void renderizarCentrado(SDL_Renderer *renderer, TTF_Font *fuente, const char *texto,

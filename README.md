@@ -35,7 +35,7 @@ Nota: Para cambiar la configuración, abra el archivo config.txt y cambie los va
 - El tamaño máximo del laberinto es 30 filas y 50 columnas, más que eso no entraría bien en pantalla.
 - Fantasmas: 2%-4% del total de celdas (filas * columnas).
 - Premios: 10%-12% del total de celdas (filas * columnas). 
-- Vidas extra: 0.07% del total de celdas (filas * columnas).
+- Vidas extra: 1%-2% del total de celdas (filas * columnas).
 - El progama está preparado para el caso en el que se indiquen más fantasmas/premios/vidas de los que entran en el laberinto; sin embargo, nada le impide indicar una cantidad de fantasmas válida que haga imposible llegar a la salida. No se recomienda hacer esto.
 - No borre el archivo config.txt, si lo borra, tendrá que volver a crearlo.
 

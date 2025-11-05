@@ -162,51 +162,6 @@ int inicializarSDL(ContextoSDL *sdl, const Configuracion *config)
     return TODO_BIEN;
 }
 
-int renderizarTexto(SDL_Renderer *renderer, TTF_Font *fuente, const char *mensaje, SDL_Color color, int ancho, int alto, int tiempo)
-{
-    SDL_Rect destino;
-    SDL_Surface *superficie = NULL;
-    SDL_Texture *texto = NULL;
-
-    if(!renderer || !fuente || !mensaje)
-        return ERROR_SDL;
-
-    superficie = TTF_RenderText_Solid(fuente, mensaje, color);
-    if(!superficie)
-    {
-        printf("\nERROR al renderizar un texto: %s", TTF_GetError());
-        return ERROR_SDL;
-    }
-
-    texto = SDL_CreateTextureFromSurface(renderer, superficie);
-    if(!texto)
-    {
-        printf("\nERROR al crear una textura: %s", SDL_GetError());
-        SDL_FreeSurface(superficie);
-        return ERROR_SDL;
-    }
-
-
-    destino.w = superficie->w > 0 ? superficie->w : 1;
-    destino.h = superficie->h > 0 ? superficie->h : 1;
-    destino.x = (ancho - destino.w) / 2;
-    destino.y = (alto - destino.h) / 2;
-
-    SDL_FreeSurface(superficie);
-    SDL_SetTextureBlendMode(texto, SDL_BLENDMODE_BLEND);
-
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-    SDL_RenderClear(renderer);
-    SDL_RenderCopy(renderer, texto, NULL, &destino);
-    SDL_RenderPresent(renderer);
-
-    if(tiempo > 0)
-        SDL_Delay(tiempo);
-
-    SDL_DestroyTexture(texto);
-    return TODO_BIEN;
-}
-
 void renderizarHUD(SDL_Renderer *renderer, TTF_Font *fuente, const char *mensaje, SDL_Color color, int x, int y, float escala)
 {
     SDL_Surface *superficie = NULL;

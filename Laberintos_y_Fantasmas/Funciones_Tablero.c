@@ -107,22 +107,6 @@ void destruir_matriz(void **matriz, int filas)
     free(matriz);
 }
 
-void mostrar_matriz(char **matriz, int filas, int col)
-{
-    int I, J;
-
-    if(!matriz)
-        return;
-
-    for(I = 0; I < filas; I++)
-    {
-        for(J = 0; J < col; J++)
-        {
-            printf("%c", matriz[I][J]);
-        }
-        printf("\n");
-    }
-}
 
 int inicializarTablero(Tablero *laberinto)
 {
