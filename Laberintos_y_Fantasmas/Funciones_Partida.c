@@ -110,7 +110,7 @@ int moverFantasmas(Tablero *laberinto, Fantasma *fantasmas, Jugador *jugador, in
 
         if(nX >= 0 && nX < laberinto->columnas && nY >= 0 && nY < laberinto->filas &&
            laberinto->celdas[nY][nX] != '#' && laberinto->celdas[nY][nX] != 'S' &&
-           laberinto->celdas[nY][nX] != 'E')
+           laberinto->celdas[nY][nX] != 'E' && laberinto->celdas[nY][nX] != 'F')
         {
             laberinto->celdas[sY][sX] = fantasmas[I].quePisa;
             fantasmas[I].quePisa = laberinto->celdas[nY][nX];

@@ -7,11 +7,6 @@ int cmpPuntajeDesc(const void *a, const void *b) {
 }
 
 
-void printUsuario(const void *dato) {
-    const Usuario *user = (const Usuario *)dato;
-    printf("ID: %d | Nombre: %s | Puntaje Total: %d| PartidasJugadas: %d\n", user->id_jugador, user->nombre, user->p_total, user->partidas_jugadas);
-}
-
 
 void verRanking(tLista* ranking, SOCKET *sock) {
     char buffer[512], nombre[50], acumulador[4096] = "";

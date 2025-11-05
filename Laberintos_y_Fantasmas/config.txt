@@ -1,6 +1,6 @@
 filas=15
 columnas=15
-vidas_inicio=3
-maximo_numero_fantasmas=2
-maximo_numero_premios=8
-maximo_vidas_extra=4
+vidas_inicio=99
+maximo_numero_fantasmas=10
+maximo_numero_premios=22
+maximo_vidas_extra=2

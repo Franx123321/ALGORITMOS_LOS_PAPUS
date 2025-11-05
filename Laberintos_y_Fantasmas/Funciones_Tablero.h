@@ -7,7 +7,6 @@
 
 char **crear_matriz(int filas, int columnas);
 void destruir_matriz(void **matriz, int filas);
-void mostrar_matriz(char **matriz, int filas, int col);
 int inicializarTablero(Tablero *laberinto);
 int generarLaberinto(Tablero *laberinto, int fil, int col);
 int agujerearLaberinto(Tablero *laberinto);
